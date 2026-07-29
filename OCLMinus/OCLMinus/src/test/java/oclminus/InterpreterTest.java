@@ -5,11 +5,15 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.VariableExpression;
+import oclminus.runtime.Environment;
 import oclminus.runtime.Interpreter;
 import oclminus.runtime.OclBoolean;
 import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
+import oclminus.ast.VariableExpression;
+import oclminus.runtime.Environment;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -134,6 +138,52 @@ class InterpreterTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> interpreter.evaluate(null)
+        );
+    }
+
+    @Test
+    void evaluatesVariableExpression() {
+        Environment environment = new Environment();
+
+        environment.define(
+                "x",
+                new OclInteger(42)
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        OclValue result = interpreter.evaluate(
+                new VariableExpression("x")
+        );
+
+        assertEquals(
+                new OclInteger(42),
+                result
+        );
+    }
+
+    @Test
+    void evaluatesExpressionContainingVariable() {
+        Environment environment = new Environment();
+
+        environment.define(
+                "x",
+                new OclInteger(5)
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        Expression expression = new BinaryExpression(
+                new VariableExpression("x"),
+                BinaryOperator.PLUS,
+                new IntegerLiteral(3)
+        );
+
+        assertEquals(
+                new OclInteger(8),
+                interpreter.evaluate(expression)
         );
     }
 }

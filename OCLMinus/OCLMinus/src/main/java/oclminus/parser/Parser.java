@@ -74,22 +74,22 @@ public final class Parser {
     }
 
     private Expression parsePropertyAccess() {
-    Expression expression = parsePrimary();
+        Expression expression = parsePrimary();
 
-    while (match(TokenType.DOT)) {
-        Token propertyToken = consume(
-                TokenType.IDENTIFIER,
-                "Nach '.' wurde ein Property-Name erwartet."
-        );
+        while (match(TokenType.DOT)) {
+            Token propertyToken = consume(
+                    TokenType.IDENTIFIER,
+                    "Nach '.' wurde ein Property-Name erwartet."
+            );
 
-        expression = new PropertyAccessExpression(
-                expression,
-                propertyToken.lexeme()
-        );
+            expression = new PropertyAccessExpression(
+                    expression,
+                    propertyToken.lexeme()
+            );
+        }
+
+        return expression;
     }
-
-    return expression;
-}
 
     private Expression parsePrimary() {
     if (match(TokenType.INTEGER)) {

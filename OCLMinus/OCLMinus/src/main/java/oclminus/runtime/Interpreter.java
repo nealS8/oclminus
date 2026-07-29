@@ -5,8 +5,25 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.VariableExpression;
 
 public final class Interpreter {
+
+    private final Environment environment;
+
+    public Interpreter() {
+        this(new Environment());
+    }
+
+    public Interpreter(Environment environment) {
+        if (environment == null) {
+            throw new IllegalArgumentException(
+                    "Environment darf nicht null sein."
+            );
+        }
+
+        this.environment = environment;
+    }
 
     public OclValue evaluate(Expression expression) {
         if (expression == null) {
@@ -21,6 +38,10 @@ public final class Interpreter {
 
         if (expression instanceof BooleanLiteral booleanLiteral) {
             return new OclBoolean(booleanLiteral.value());
+        }
+
+        if (expression instanceof VariableExpression variableExpression) {
+            return environment.lookup(variableExpression.name());
         }
 
         if (expression instanceof BinaryExpression binaryExpression) {

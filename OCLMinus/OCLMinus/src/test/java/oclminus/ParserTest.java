@@ -5,12 +5,13 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.lexer.Lexer;
 import oclminus.parser.ParseException;
 import oclminus.parser.Parser;
 import org.junit.jupiter.api.Test;
-
+import oclminus.ast.PropertyAccessExpression;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -168,5 +169,62 @@ class ParserTest {
             );
 
     assertEquals("person", variable.name());
-}
+    }
+
+    @Test
+    void parsesPropertyAccess() {
+        Expression expression = parse("person.age");
+
+        PropertyAccessExpression propertyAccess =
+                assertInstanceOf(
+                        PropertyAccessExpression.class,
+                        expression
+                );
+
+        VariableExpression target =
+                assertInstanceOf(
+                        VariableExpression.class,
+                        propertyAccess.target()
+                );
+
+        assertEquals("person", target.name());
+        assertEquals("age", propertyAccess.propertyName());
+    }
+
+    @Test
+    void parsesChainedPropertyAccess() {
+        Expression expression = parse("person.address.city");
+
+        PropertyAccessExpression cityAccess =
+                assertInstanceOf(
+                        PropertyAccessExpression.class,
+                        expression
+                );
+
+        assertEquals("city", cityAccess.propertyName());
+
+        PropertyAccessExpression addressAccess =
+                assertInstanceOf(
+                        PropertyAccessExpression.class,
+                        cityAccess.target()
+                );
+
+        assertEquals("address", addressAccess.propertyName());
+
+        VariableExpression person =
+                assertInstanceOf(
+                        VariableExpression.class,
+                        addressAccess.target()
+                );
+
+        assertEquals("person", person.name());
+    }
+
+    @Test
+    void rejectsMissingPropertyName() {
+        assertThrows(
+                ParseException.class,
+                () -> parse("person.")
+        );
+    }
 }

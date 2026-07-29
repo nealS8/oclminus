@@ -8,7 +8,7 @@ import oclminus.ast.IntegerLiteral;
 import oclminus.lexer.Token;
 import oclminus.lexer.TokenType;
 import oclminus.ast.VariableExpression;
-
+import oclminus.ast.PropertyAccessExpression;
 import java.util.List;
 
 public final class Parser {
@@ -58,20 +58,38 @@ public final class Parser {
     }
 
     private Expression parseMultiplication() {
-        Expression expression = parsePrimary();
+        Expression expression = parsePropertyAccess();
 
         while (match(TokenType.STAR)) {
-            Expression right = parsePrimary();
+            Expression right = parsePropertyAccess();
 
             expression = new BinaryExpression(
-                    expression,
-                    BinaryOperator.MULTIPLY,
-                    right
+                expression,
+                BinaryOperator.MULTIPLY,
+                right
             );
         }
 
         return expression;
     }
+
+    private Expression parsePropertyAccess() {
+    Expression expression = parsePrimary();
+
+    while (match(TokenType.DOT)) {
+        Token propertyToken = consume(
+                TokenType.IDENTIFIER,
+                "Nach '.' wurde ein Property-Name erwartet."
+        );
+
+        expression = new PropertyAccessExpression(
+                expression,
+                propertyToken.lexeme()
+        );
+    }
+
+    return expression;
+}
 
     private Expression parsePrimary() {
     if (match(TokenType.INTEGER)) {

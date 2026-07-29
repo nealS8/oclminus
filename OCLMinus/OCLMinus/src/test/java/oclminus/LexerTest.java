@@ -70,4 +70,24 @@ class LexerTest {
         );
     }
 
+    @Test
+    void scansPropertyAccess() {
+        Lexer lexer = new Lexer("person.age");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(4, tokens.size());
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals("person", tokens.get(0).lexeme());
+
+        assertEquals(TokenType.DOT, tokens.get(1).type());
+        assertEquals(".", tokens.get(1).lexeme());
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(2).type());
+        assertEquals("age", tokens.get(2).lexeme());
+
+        assertEquals(TokenType.EOF, tokens.get(3).type());
+    }
+
 }

@@ -7,5 +7,6 @@ public enum TokenType {
     FALSE,
     PLUS,
     STAR,
+    DOT,
     EOF
 }

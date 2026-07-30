@@ -9,6 +9,9 @@ import oclminus.lexer.Token;
 import oclminus.lexer.TokenType;
 import oclminus.ast.VariableExpression;
 import oclminus.ast.PropertyAccessExpression;
+import oclminus.ast.UnaryExpression;
+import oclminus.ast.UnaryOperator;
+
 import java.util.List;
 
 public final class Parser {
@@ -35,6 +38,24 @@ public final class Parser {
         );
 
         return expression;
+    }
+
+    private Expression parseUnary() {
+        if (match(TokenType.NOT)) {
+            return new UnaryExpression(
+                    UnaryOperator.NOT,
+                    parseUnary()
+            );
+        }
+
+        if (match(TokenType.MINUS)) {
+            return new UnaryExpression(
+                    UnaryOperator.NEGATE,
+                    parseUnary()
+            );
+        }
+
+        return parsePropertyAccess();
     }
 
     private Expression parseExpression() {
@@ -203,7 +224,7 @@ public final class Parser {
     }
 
     private Expression parseMultiplication() {
-        Expression expression = parsePropertyAccess();
+        Expression expression = parseUnary();
 
         while (match(
                 TokenType.STAR,
@@ -217,7 +238,7 @@ public final class Parser {
                         default -> throw new IllegalStateException();
                     };
 
-            Expression right = parsePropertyAccess();
+            Expression right = parseUnary();
 
             expression = new BinaryExpression(
                     expression,
@@ -248,48 +269,46 @@ public final class Parser {
     }
 
     private Expression parsePrimary() {
-    if (match(TokenType.INTEGER)) {
-        Token token = previous();
-
-        try {
-            int value = Integer.parseInt(token.lexeme());
-            return new IntegerLiteral(value);
-        } catch (NumberFormatException exception) {
-            throw new ParseException(
-                    "Ungültige Ganzzahl '"
-                            + token.lexeme()
-                            + "' an Position "
-                            + token.position()
+        if (match(TokenType.INTEGER)) {
+            return new IntegerLiteral(
+                    Integer.parseInt(
+                            previous().lexeme()
+                    )
             );
         }
-    }
 
-    if (match(TokenType.TRUE)) {
-        return new BooleanLiteral(true);
-    }
+        if (match(TokenType.TRUE)) {
+            return new BooleanLiteral(true);
+        }
 
-    if (match(TokenType.FALSE)) {
-        return new BooleanLiteral(false);
-    }
+        if (match(TokenType.FALSE)) {
+            return new BooleanLiteral(false);
+        }
 
-    if (match(TokenType.IDENTIFIER)) {
-        Token token = previous();
+        if (match(TokenType.IDENTIFIER)) {
+            return new VariableExpression(
+                    previous().lexeme()
+            );
+        }
 
-        return new VariableExpression(
-                token.lexeme()
+        if (match(TokenType.LEFT_PAREN)) {
+            Expression expression = parseExpression();
+
+            consume(
+                    TokenType.RIGHT_PAREN,
+                    "Nach dem Ausdruck wurde ')' erwartet."
+            );
+
+            return expression;
+        }
+
+        throw new ParseException(
+                "Unerwartetes Token: "
+                        + peek().lexeme()
+                        + " an Position "
+                        + peek().position()
         );
     }
-
-    Token token = peek();
-
-    throw new ParseException(
-            "Grundausdruck erwartet, aber '"
-                    + token.lexeme()
-                    + "' an Position "
-                    + token.position()
-                    + " gefunden."
-    );
-}
 
     private boolean match(TokenType... expectedTypes) {
         for (TokenType expectedType : expectedTypes) {

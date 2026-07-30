@@ -8,5 +8,6 @@ public enum TokenType {
     PLUS,
     STAR,
     DOT,
+    EQUAL,
     EOF
 }

@@ -204,4 +204,72 @@ class InterpreterTest {
                 interpreter.evaluate(expression)
         );
     }
+
+    @Test
+        void evaluatesEqualIntegers() {
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(2),
+                        BinaryOperator.EQUAL,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(true))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void evaluatesDifferentIntegers() {
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(2),
+                        BinaryOperator.EQUAL,
+                        new IntegerLiteral(3)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(false))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+void evaluatesEqualBooleans() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.EQUAL,
+                    new BooleanLiteral(true)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesDifferentTypesAsNotEqual() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(1),
+                    BinaryOperator.EQUAL,
+                    new BooleanLiteral(true)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(false))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
 }

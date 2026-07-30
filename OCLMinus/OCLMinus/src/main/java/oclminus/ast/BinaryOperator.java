@@ -2,5 +2,6 @@ package oclminus.ast;
 
 public enum BinaryOperator {
     PLUS,
-    MULTIPLY
+    MULTIPLY,
+    EQUAL
 }

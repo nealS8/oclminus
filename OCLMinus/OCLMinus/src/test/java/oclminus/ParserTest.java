@@ -11,7 +11,6 @@ import oclminus.lexer.Lexer;
 import oclminus.parser.ParseException;
 import oclminus.parser.Parser;
 import org.junit.jupiter.api.Test;
-import oclminus.ast.PropertyAccessExpression;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -227,4 +226,40 @@ class ParserTest {
                 () -> parse("person.")
         );
     }
+
+@Test
+        void parsesEqualityExpression() {
+        Expression expression = parse("2 = 3");
+
+        BinaryExpression binary =
+                assertInstanceOf(
+                        BinaryExpression.class,
+                        expression
+                );
+
+        assertEquals(BinaryOperator.EQUAL, binary.operator());
+        assertEquals(new IntegerLiteral(2), binary.left());
+        assertEquals(new IntegerLiteral(3), binary.right());
+        }
+
+@Test
+        void equalityHasLowerPrecedenceThanAddition() {
+        Expression expression = parse("2 + 3 = 5");
+
+        BinaryExpression equality =
+                assertInstanceOf(
+                        BinaryExpression.class,
+                        expression
+                );
+
+        assertEquals(BinaryOperator.EQUAL, equality.operator());
+
+        BinaryExpression addition =
+                assertInstanceOf(
+                        BinaryExpression.class,
+                        equality.left()
+                );
+
+        assertEquals(BinaryOperator.PLUS, addition.operator());
+        }
 }

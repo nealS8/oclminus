@@ -10,6 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
+
 class OclMinusEngineTest {
 
     private final OclMinusEngine engine =
@@ -128,6 +130,46 @@ class OclMinusEngineTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> engine.evaluate("true + 3")
+        );
+    }
+
+    @Test
+    void evaluatesIntegerEquality() {
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(true))
+                ),
+                engine.evaluate("2 = 2")
+        );
+    }
+
+    @Test
+    void evaluatesIntegerInequality() {
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(false))
+                ),
+                engine.evaluate("2 = 3")
+        );
+    }
+
+    @Test
+    void evaluatesBooleanEquality() {
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(true))
+                ),
+                engine.evaluate("true = true")
+        );
+    }
+
+    @Test
+    void equalityHasLowerPrecedenceThanAddition() {
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclBoolean(true))
+                ),
+                engine.evaluate("2 + 3 = 5")
         );
     }
 }

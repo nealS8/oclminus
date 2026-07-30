@@ -51,6 +51,7 @@ public final class Lexer {
         switch (currentCharacter) {
             case '+' -> addSingleCharacterToken(TokenType.PLUS);
             case '*' -> addSingleCharacterToken(TokenType.STAR);
+            case '=' -> addSingleCharacterToken(TokenType.EQUAL);
             case '.' -> addSingleCharacterToken(TokenType.DOT);
 
             default -> {

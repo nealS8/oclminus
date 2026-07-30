@@ -38,7 +38,23 @@ public final class Parser {
     }
 
     private Expression parseExpression() {
-        return parseAddition();
+            return parseEquality();
+        }
+
+        private Expression parseEquality() {
+        Expression expression = parseAddition();
+
+        while (match(TokenType.EQUAL)) {
+            Expression right = parseAddition();
+
+            expression = new BinaryExpression(
+                    expression,
+                    BinaryOperator.EQUAL,
+                    right
+            );
+        }
+
+        return expression;
     }
 
     private Expression parseAddition() {

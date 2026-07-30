@@ -63,39 +63,6 @@ public final class Interpreter {
         );
     }
 
-    private OclInteger requireSingleInteger(
-            OclValue value,
-            BinaryOperator operator
-    ) {
-        if (!(value instanceof OclRelation relation)) {
-            throw new IllegalStateException(
-                    "Der Operator '"
-                            + operator
-                            + "' erwartet eine Relation."
-            );
-        }
-
-        if (relation.elements().size() != 1) {
-            throw new IllegalStateException(
-                    "Der Operator '"
-                            + operator
-                            + "' erwartet genau einen Wert."
-            );
-        }
-
-        OclValue element = relation.elements().get(0);
-
-        if (!(element instanceof OclInteger integer)) {
-            throw new IllegalStateException(
-                    "Der Operator '"
-                            + operator
-                            + "' erwartet einen Integer."
-            );
-        }
-
-        return integer;
-    }
-
     private OclValue evaluateBinaryExpression(
             BinaryExpression expression
     ) {
@@ -105,6 +72,7 @@ public final class Interpreter {
         return switch (expression.operator()) {
             case PLUS -> add(leftValue, rightValue);
             case MULTIPLY -> multiply(leftValue, rightValue);
+            case EQUAL -> equal(leftValue, rightValue);
         };
     }
 
@@ -158,5 +126,70 @@ public final class Interpreter {
         return new OclRelation(
                 List.of(result)
         );
+    }
+
+    private OclValue equal(
+            OclValue leftValue,
+            OclValue rightValue
+    ) {
+        OclValue leftElement =
+                requireSingleElement(
+                        leftValue,
+                        BinaryOperator.EQUAL
+                );
+
+        OclValue rightElement =
+                requireSingleElement(
+                        rightValue,
+                        BinaryOperator.EQUAL
+                );
+
+        boolean result =
+                leftElement.equals(rightElement);
+
+        return new OclRelation(
+                List.of(new OclBoolean(result))
+        );
+    }
+
+    private OclInteger requireSingleInteger(
+        OclValue value,
+        BinaryOperator operator
+    ) {
+        OclValue element =
+                requireSingleElement(value, operator);
+
+        if (!(element instanceof OclInteger integer)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet einen Integer."
+            );
+        }
+
+        return integer;
+    }
+
+    private OclValue requireSingleElement(
+        OclValue value,
+        BinaryOperator operator
+    ) {
+        if (!(value instanceof OclRelation relation)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet eine Relation."
+            );
+        }
+
+        if (relation.elements().size() != 1) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet genau einen Wert."
+            );
+        }
+
+        return relation.elements().get(0);
     }
 }

@@ -90,4 +90,16 @@ class LexerTest {
         assertEquals(TokenType.EOF, tokens.get(3).type());
     }
 
+    @Test
+    void scansEqualOperator() {
+        Lexer lexer = new Lexer("2 = 2");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.INTEGER, tokens.get(0).type());
+        assertEquals(TokenType.EQUAL, tokens.get(1).type());
+        assertEquals(TokenType.INTEGER, tokens.get(2).type());
+        assertEquals(TokenType.EOF, tokens.get(3).type());
+    }
+
 }

@@ -10,23 +10,26 @@ import oclminus.runtime.Environment;
 import oclminus.runtime.Interpreter;
 import oclminus.runtime.OclBoolean;
 import oclminus.runtime.OclInteger;
+import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
-import oclminus.ast.VariableExpression;
-import oclminus.runtime.Environment;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InterpreterTest {
 
-    private final Interpreter interpreter = new Interpreter();
+    private final Interpreter interpreter =
+            new Interpreter();
 
     @Test
     void evaluatesIntegerLiteral() {
-
         assertEquals(
-                new OclInteger(42),
+                new OclRelation(
+                        List.of(new OclInteger(42))
+                ),
                 interpreter.evaluate(
                         new IntegerLiteral(42)
                 )
@@ -35,9 +38,10 @@ class InterpreterTest {
 
     @Test
     void evaluatesTrueLiteral() {
-
         assertEquals(
-                new OclBoolean(true),
+                new OclRelation(
+                        List.of(new OclBoolean(true))
+                ),
                 interpreter.evaluate(
                         new BooleanLiteral(true)
                 )
@@ -46,9 +50,10 @@ class InterpreterTest {
 
     @Test
     void evaluatesFalseLiteral() {
-
         assertEquals(
-                new OclBoolean(false),
+                new OclRelation(
+                        List.of(new OclBoolean(false))
+                ),
                 interpreter.evaluate(
                         new BooleanLiteral(false)
                 )
@@ -57,7 +62,6 @@ class InterpreterTest {
 
     @Test
     void evaluatesAddition() {
-
         Expression expression =
                 new BinaryExpression(
                         new IntegerLiteral(2),
@@ -69,14 +73,15 @@ class InterpreterTest {
                 interpreter.evaluate(expression);
 
         assertEquals(
-                new OclInteger(5),
+                new OclRelation(
+                        List.of(new OclInteger(5))
+                ),
                 result
         );
     }
 
     @Test
     void evaluatesMultiplication() {
-
         Expression expression =
                 new BinaryExpression(
                         new IntegerLiteral(2),
@@ -88,14 +93,15 @@ class InterpreterTest {
                 interpreter.evaluate(expression);
 
         assertEquals(
-                new OclInteger(6),
+                new OclRelation(
+                        List.of(new OclInteger(6))
+                ),
                 result
         );
     }
 
     @Test
     void evaluatesNestedExpression() {
-
         Expression expression =
                 new BinaryExpression(
                         new IntegerLiteral(2),
@@ -111,14 +117,15 @@ class InterpreterTest {
                 interpreter.evaluate(expression);
 
         assertEquals(
-                new OclInteger(14),
+                new OclRelation(
+                        List.of(new OclInteger(14))
+                ),
                 result
         );
     }
 
     @Test
     void rejectsBooleanAddition() {
-
         Expression expression =
                 new BinaryExpression(
                         new BooleanLiteral(true),
@@ -134,7 +141,6 @@ class InterpreterTest {
 
     @Test
     void rejectsNullExpression() {
-
         assertThrows(
                 IllegalArgumentException.class,
                 () -> interpreter.evaluate(null)
@@ -143,46 +149,58 @@ class InterpreterTest {
 
     @Test
     void evaluatesVariableExpression() {
-        Environment environment = new Environment();
+        Environment environment =
+                new Environment();
 
         environment.define(
                 "x",
-                new OclInteger(42)
+                new OclRelation(
+                        List.of(new OclInteger(42))
+                )
         );
 
         Interpreter interpreter =
                 new Interpreter(environment);
 
-        OclValue result = interpreter.evaluate(
-                new VariableExpression("x")
-        );
+        OclValue result =
+                interpreter.evaluate(
+                        new VariableExpression("x")
+                );
 
         assertEquals(
-                new OclInteger(42),
+                new OclRelation(
+                        List.of(new OclInteger(42))
+                ),
                 result
         );
     }
 
     @Test
     void evaluatesExpressionContainingVariable() {
-        Environment environment = new Environment();
+        Environment environment =
+                new Environment();
 
         environment.define(
                 "x",
-                new OclInteger(5)
+                new OclRelation(
+                        List.of(new OclInteger(5))
+                )
         );
 
         Interpreter interpreter =
                 new Interpreter(environment);
 
-        Expression expression = new BinaryExpression(
-                new VariableExpression("x"),
-                BinaryOperator.PLUS,
-                new IntegerLiteral(3)
-        );
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("x"),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(3)
+                );
 
         assertEquals(
-                new OclInteger(8),
+                new OclRelation(
+                        List.of(new OclInteger(8))
+                ),
                 interpreter.evaluate(expression)
         );
     }

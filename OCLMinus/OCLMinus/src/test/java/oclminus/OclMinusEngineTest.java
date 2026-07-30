@@ -2,6 +2,7 @@ package oclminus;
 
 import oclminus.runtime.OclBoolean;
 import oclminus.runtime.OclInteger;
+import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
 
@@ -18,8 +19,16 @@ class OclMinusEngineTest {
     void evaluatesIntegerLiteral() {
         OclValue result = engine.evaluate("42");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclInteger integer =
-                assertInstanceOf(OclInteger.class, result);
+                assertInstanceOf(
+                        OclInteger.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(42, integer.value());
     }
@@ -28,8 +37,16 @@ class OclMinusEngineTest {
     void evaluatesTrueLiteral() {
         OclValue result = engine.evaluate("true");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclBoolean bool =
-                assertInstanceOf(OclBoolean.class, result);
+                assertInstanceOf(
+                        OclBoolean.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(true, bool.value());
     }
@@ -38,8 +55,16 @@ class OclMinusEngineTest {
     void evaluatesFalseLiteral() {
         OclValue result = engine.evaluate("false");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclBoolean bool =
-                assertInstanceOf(OclBoolean.class, result);
+                assertInstanceOf(
+                        OclBoolean.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(false, bool.value());
     }
@@ -48,8 +73,16 @@ class OclMinusEngineTest {
     void evaluatesAddition() {
         OclValue result = engine.evaluate("2 + 3");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclInteger integer =
-                assertInstanceOf(OclInteger.class, result);
+                assertInstanceOf(
+                        OclInteger.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(5, integer.value());
     }
@@ -58,8 +91,16 @@ class OclMinusEngineTest {
     void evaluatesMultiplication() {
         OclValue result = engine.evaluate("2 * 3");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclInteger integer =
-                assertInstanceOf(OclInteger.class, result);
+                assertInstanceOf(
+                        OclInteger.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(6, integer.value());
     }
@@ -68,8 +109,16 @@ class OclMinusEngineTest {
     void respectsOperatorPrecedence() {
         OclValue result = engine.evaluate("2 + 3 * 4");
 
+        OclRelation relation =
+                assertInstanceOf(OclRelation.class, result);
+
+        assertEquals(1, relation.elements().size());
+
         OclInteger integer =
-                assertInstanceOf(OclInteger.class, result);
+                assertInstanceOf(
+                        OclInteger.class,
+                        relation.elements().get(0)
+                );
 
         assertEquals(14, integer.value());
     }

@@ -6,6 +6,7 @@ import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.VariableExpression;
+import java.util.List;
 
 public final class Interpreter {
 
@@ -62,6 +63,39 @@ public final class Interpreter {
         );
     }
 
+    private OclInteger requireSingleInteger(
+            OclValue value,
+            BinaryOperator operator
+    ) {
+        if (!(value instanceof OclRelation relation)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet eine Relation."
+            );
+        }
+
+        if (relation.elements().size() != 1) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet genau einen Wert."
+            );
+        }
+
+        OclValue element = relation.elements().get(0);
+
+        if (!(element instanceof OclInteger integer)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet einen Integer."
+            );
+        }
+
+        return integer;
+    }
+
     private OclValue evaluateBinaryExpression(
             BinaryExpression expression
     ) {
@@ -75,38 +109,54 @@ public final class Interpreter {
     }
 
     private OclValue add(
-            OclValue leftValue,
-            OclValue rightValue
-    ) {
-        if (leftValue instanceof OclInteger leftInteger
-                && rightValue instanceof OclInteger rightInteger) {
-
-            return new OclInteger(
-                    leftInteger.value()
-                            + rightInteger.value()
+        OclValue leftValue,
+        OclValue rightValue
+) {
+    OclInteger leftInteger =
+            requireSingleInteger(
+                    leftValue,
+                    BinaryOperator.PLUS
             );
-        }
 
-        throw new IllegalStateException(
-                "Der Operator '+' erwartet zwei Ganzzahlen."
-        );
-    }
+    OclInteger rightInteger =
+            requireSingleInteger(
+                    rightValue,
+                    BinaryOperator.PLUS
+            );
+
+    OclInteger result = new OclInteger(
+            leftInteger.value()
+                    + rightInteger.value()
+    );
+
+    return new OclRelation(
+            List.of(result)
+    );
+}
 
     private OclValue multiply(
             OclValue leftValue,
             OclValue rightValue
     ) {
-        if (leftValue instanceof OclInteger leftInteger
-                && rightValue instanceof OclInteger rightInteger) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.MULTIPLY
+                );
 
-            return new OclInteger(
-                    leftInteger.value()
-                            * rightInteger.value()
-            );
-        }
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.MULTIPLY
+                );
 
-        throw new IllegalStateException(
-                "Der Operator '*' erwartet zwei Ganzzahlen."
+        OclInteger result = new OclInteger(
+                leftInteger.value()
+                        * rightInteger.value()
+        );
+
+        return new OclRelation(
+                List.of(result)
         );
     }
 }

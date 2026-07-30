@@ -34,25 +34,39 @@ public final class Lexer {
         return List.copyOf(tokens);
     }
 
-    private void addSingleCharacterToken(TokenType type) {
-        int position = current;
-        char character = advance();
-
-        tokens.add(new Token(
-                type,
-                String.valueOf(character),
-                position
-        ));
-    }
-
     private void scanToken() {
         char currentCharacter = peek();
 
         switch (currentCharacter) {
-            case '+' -> addSingleCharacterToken(TokenType.PLUS);
-            case '*' -> addSingleCharacterToken(TokenType.STAR);
-            case '=' -> addSingleCharacterToken(TokenType.EQUAL);
-            case '.' -> addSingleCharacterToken(TokenType.DOT);
+            case '+' ->
+                    addSingleCharacterToken(TokenType.PLUS);
+
+            case '-' ->
+                    addSingleCharacterToken(TokenType.MINUS);
+
+            case '*' ->
+                    addSingleCharacterToken(TokenType.STAR);
+
+            case '/' ->
+                    addSingleCharacterToken(TokenType.SLASH);
+
+            case '=' ->
+                    addSingleCharacterToken(TokenType.EQUAL);
+
+            case '<' ->
+                    scanLessThanOperator();
+
+            case '>' ->
+                    scanGreaterThanOperator();
+
+            case '.' ->
+                    addSingleCharacterToken(TokenType.DOT);
+
+            case '(' ->
+                    addSingleCharacterToken(TokenType.LEFT_PAREN);
+
+            case ')' ->
+                    addSingleCharacterToken(TokenType.RIGHT_PAREN);
 
             default -> {
                 if (Character.isWhitespace(currentCharacter)) {
@@ -103,7 +117,7 @@ public final class Lexer {
 
         while (!isAtEnd()
                 && (Character.isLetterOrDigit(peek())
-                    || peek() == '_')) {
+                || peek() == '_')) {
             advance();
         }
 
@@ -111,9 +125,29 @@ public final class Lexer {
                 source.substring(start, current);
 
         TokenType type = switch (lexeme) {
-            case "true" -> TokenType.TRUE;
-            case "false" -> TokenType.FALSE;
-            default -> TokenType.IDENTIFIER;
+            case "true" ->
+                    TokenType.TRUE;
+
+            case "false" ->
+                    TokenType.FALSE;
+
+            case "and" ->
+                    TokenType.AND;
+
+            case "or" ->
+                    TokenType.OR;
+
+            case "xor" ->
+                    TokenType.XOR;
+
+            case "implies" ->
+                    TokenType.IMPLIES;
+
+            case "not" ->
+                    TokenType.NOT;
+
+            default ->
+                    TokenType.IDENTIFIER;
         };
 
         tokens.add(new Token(
@@ -123,11 +157,100 @@ public final class Lexer {
         ));
     }
 
+    private void scanLessThanOperator() {
+        int position = current;
+
+        // Das Zeichen '<' konsumieren.
+        advance();
+
+        if (match('=')) {
+            addToken(
+                    TokenType.LESS_THAN_OR_EQUAL,
+                    "<=",
+                    position
+            );
+            return;
+        }
+
+        if (match('>')) {
+            addToken(
+                    TokenType.NOT_EQUAL,
+                    "<>",
+                    position
+            );
+            return;
+        }
+
+        addToken(
+                TokenType.LESS_THAN,
+                "<",
+                position
+        );
+    }
+
+    private void scanGreaterThanOperator() {
+        int position = current;
+
+        // Das Zeichen '>' konsumieren.
+        advance();
+
+        if (match('=')) {
+            addToken(
+                    TokenType.GREATER_THAN_OR_EQUAL,
+                    ">=",
+                    position
+            );
+            return;
+        }
+
+        addToken(
+                TokenType.GREATER_THAN,
+                ">",
+                position
+        );
+    }
+
+    private void addSingleCharacterToken(TokenType type) {
+        int position = current;
+        char character = advance();
+
+        addToken(
+                type,
+                String.valueOf(character),
+                position
+        );
+    }
+
+    private void addToken(
+            TokenType type,
+            String lexeme,
+            int position
+    ) {
+        tokens.add(new Token(
+                type,
+                lexeme,
+                position
+        ));
+    }
+
     private void skipWhitespace() {
         while (!isAtEnd()
                 && Character.isWhitespace(peek())) {
             advance();
         }
+    }
+
+    private boolean match(char expected) {
+        if (isAtEnd()) {
+            return false;
+        }
+
+        if (peek() != expected) {
+            return false;
+        }
+
+        advance();
+        return true;
     }
 
     private char advance() {

@@ -14,7 +14,8 @@ import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
 import java.util.List;
-
+import oclminus.ast.UnaryExpression;
+import oclminus.ast.UnaryOperator;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -323,6 +324,274 @@ void rejectsDivisionByZero() {
 
     assertThrows(
             ArithmeticException.class,
+            () -> interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesNotEqualIntegers() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(2),
+                    BinaryOperator.NOT_EQUAL,
+                    new IntegerLiteral(3)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesLessThan() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(2),
+                    BinaryOperator.LESS_THAN,
+                    new IntegerLiteral(3)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesLessThanOrEqual() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(3),
+                    BinaryOperator.LESS_THAN_OR_EQUAL,
+                    new IntegerLiteral(3)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesGreaterThan() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(5),
+                    BinaryOperator.GREATER_THAN,
+                    new IntegerLiteral(2)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesGreaterThanOrEqual() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(5),
+                    BinaryOperator.GREATER_THAN_OR_EQUAL,
+                    new IntegerLiteral(5)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesAnd() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.AND,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(false))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesOr() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.OR,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesXor() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.XOR,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesEqualBooleansWithXorAsFalse() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.XOR,
+                    new BooleanLiteral(true)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(false))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesTrueImpliesFalseAsFalse() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.IMPLIES,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(false))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesFalseImpliesFalseAsTrue() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(false),
+                    BinaryOperator.IMPLIES,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesUnaryNegation() {
+    Expression expression =
+            new UnaryExpression(
+                    UnaryOperator.NEGATE,
+                    new IntegerLiteral(5)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclInteger(-5))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesNot() {
+    Expression expression =
+            new UnaryExpression(
+                    UnaryOperator.NOT,
+                    new BooleanLiteral(false)
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclBoolean(true))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesNegatedAddition() {
+    Expression expression =
+            new UnaryExpression(
+                    UnaryOperator.NEGATE,
+                    new BinaryExpression(
+                            new IntegerLiteral(2),
+                            BinaryOperator.PLUS,
+                            new IntegerLiteral(3)
+                    )
+            );
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclInteger(-5))
+            ),
+            interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void rejectsNotOnInteger() {
+    Expression expression =
+            new UnaryExpression(
+                    UnaryOperator.NOT,
+                    new IntegerLiteral(1)
+            );
+
+    assertThrows(
+            IllegalStateException.class,
+            () -> interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void rejectsComparisonOfBooleans() {
+    Expression expression =
+            new BinaryExpression(
+                    new BooleanLiteral(true),
+                    BinaryOperator.LESS_THAN,
+                    new BooleanLiteral(false)
+            );
+
+    assertThrows(
+            IllegalStateException.class,
             () -> interpreter.evaluate(expression)
     );
 }

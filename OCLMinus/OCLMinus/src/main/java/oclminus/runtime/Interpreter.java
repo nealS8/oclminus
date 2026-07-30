@@ -33,11 +33,19 @@ public final class Interpreter {
         }
 
         if (expression instanceof IntegerLiteral integerLiteral) {
-            return new OclInteger(integerLiteral.value());
+            return new OclRelation(
+                java.util.List.of(
+                    new OclInteger(integerLiteral.value())
+                )
+            );
         }
 
         if (expression instanceof BooleanLiteral booleanLiteral) {
-            return new OclBoolean(booleanLiteral.value());
+            return new OclRelation(
+                java.util.List.of(
+                    new OclBoolean(booleanLiteral.value())
+                )
+            );
         }
 
         if (expression instanceof VariableExpression variableExpression) {

@@ -6,6 +6,7 @@ import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.PropertyAccessExpression;
+import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.lexer.Lexer;
 import oclminus.parser.ParseException;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import oclminus.ast.UnaryOperator;
 
 class ParserTest {
 
@@ -261,5 +263,139 @@ class ParserTest {
                 );
 
         assertEquals(BinaryOperator.PLUS, addition.operator());
+        }
+
+@Test
+        void parsesMultiplicationBeforeAddition() {
+        Expression expression = parse("2 + 3 * 4");
+
+        Expression expected = new BinaryExpression(
+                new IntegerLiteral(2),
+                BinaryOperator.PLUS,
+                new BinaryExpression(
+                        new IntegerLiteral(3),
+                        BinaryOperator.MULTIPLY,
+                        new IntegerLiteral(4)
+                )
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesParenthesesBeforeMultiplication() {
+        Expression expression = parse("(2 + 3) * 4");
+
+        Expression expected = new BinaryExpression(
+                new BinaryExpression(
+                        new IntegerLiteral(2),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(3)
+                ),
+                BinaryOperator.MULTIPLY,
+                new IntegerLiteral(4)
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesAdditionBeforeComparison() {
+        Expression expression = parse("2 + 3 < 10");
+
+        Expression expected = new BinaryExpression(
+                new BinaryExpression(
+                        new IntegerLiteral(2),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(3)
+                ),
+                BinaryOperator.LESS_THAN,
+                new IntegerLiteral(10)
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesComparisonsBeforeAnd() {
+        Expression expression = parse("2 < 3 and 4 >= 1");
+
+        Expression expected = new BinaryExpression(
+                new BinaryExpression(
+                        new IntegerLiteral(2),
+                        BinaryOperator.LESS_THAN,
+                        new IntegerLiteral(3)
+                ),
+                BinaryOperator.AND,
+                new BinaryExpression(
+                        new IntegerLiteral(4),
+                        BinaryOperator.GREATER_THAN_OR_EQUAL,
+                        new IntegerLiteral(1)
+                )
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesUnaryNot() {
+        Expression expression = parse("not false");
+
+        Expression expected = new UnaryExpression(
+                UnaryOperator.NOT,
+                new BooleanLiteral(false)
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesUnaryMinus() {
+        Expression expression = parse("-5 + 2");
+
+        Expression expected = new BinaryExpression(
+                new UnaryExpression(
+                        UnaryOperator.NEGATE,
+                        new IntegerLiteral(5)
+                ),
+                BinaryOperator.PLUS,
+                new IntegerLiteral(2)
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesAndBeforeOr() {
+        Expression expression = parse("true or false and false");
+
+        Expression expected = new BinaryExpression(
+                new BooleanLiteral(true),
+                BinaryOperator.OR,
+                new BinaryExpression(
+                        new BooleanLiteral(false),
+                        BinaryOperator.AND,
+                        new BooleanLiteral(false)
+                )
+        );
+
+        assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesOrBeforeImplies() {
+        Expression expression = parse("true implies false or true");
+
+        Expression expected = new BinaryExpression(
+                new BooleanLiteral(true),
+                BinaryOperator.IMPLIES,
+                new BinaryExpression(
+                        new BooleanLiteral(false),
+                        BinaryOperator.OR,
+                        new BooleanLiteral(true)
+                )
+        );
+
+        assertEquals(expected, expression);
         }
 }

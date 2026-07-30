@@ -7,6 +7,8 @@ import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.VariableExpression;
 import java.util.List;
+import oclminus.ast.UnaryExpression;
+import oclminus.ast.UnaryOperator;
 
 public final class Interpreter {
 
@@ -51,6 +53,10 @@ public final class Interpreter {
 
         if (expression instanceof VariableExpression variableExpression) {
             return environment.lookup(variableExpression.name());
+        }
+
+        if (expression instanceof UnaryExpression unaryExpression) {
+            return evaluateUnaryExpression(unaryExpression);
         }
 
         if (expression instanceof BinaryExpression binaryExpression) {
@@ -152,6 +158,83 @@ public final class Interpreter {
         );
     }
 
+    private OclValue evaluateUnaryExpression(
+        UnaryExpression expression
+    ) {
+        OclValue operandValue = evaluate(expression.operand());
+
+        return switch (expression.operator()) {
+            case NOT -> not(operandValue);
+            case NEGATE -> negate(operandValue);
+        };
+    }
+
+    private OclValue negate(OclValue operandValue) {
+        OclInteger integer =
+                requireSingleInteger(
+                        operandValue,
+                        UnaryOperator.NEGATE
+                );
+
+        OclInteger result =
+                new OclInteger(-integer.value());
+
+        return new OclRelation(
+                List.of(result)
+        );
+    }
+
+    private OclValue not(OclValue operandValue) {
+        OclBoolean booleanValue =
+                requireSingleBoolean(
+                        operandValue,
+                        UnaryOperator.NOT
+                );
+
+        OclBoolean result =
+                new OclBoolean(!booleanValue.value());
+
+        return new OclRelation(
+                List.of(result)
+        );
+    }
+
+    private OclBoolean requireSingleBoolean(
+        OclValue value,
+        UnaryOperator operator
+    ) {
+        OclValue element =
+                requireSingleElement(value, operator);
+
+        if (!(element instanceof OclBoolean booleanValue)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet einen Boolean."
+            );
+        }
+
+        return booleanValue;
+    }
+
+    private OclInteger requireSingleInteger(
+        OclValue value,
+        UnaryOperator operator
+    ) {
+        OclValue element =
+                requireSingleElement(value, operator);
+
+        if (!(element instanceof OclInteger integer)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet einen Integer."
+            );
+        }
+
+        return integer;
+    }
+
     private OclInteger requireSingleInteger(
         OclValue value,
         BinaryOperator operator
@@ -168,6 +251,29 @@ public final class Interpreter {
         }
 
         return integer;
+    }
+
+    private OclValue requireSingleElement(
+        OclValue value,
+        UnaryOperator operator
+    ) {
+        if (!(value instanceof OclRelation relation)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet eine Relation."
+            );
+        }
+
+        if (relation.elements().size() != 1) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet genau einen Wert."
+            );
+        }
+
+        return relation.elements().get(0);
     }
 
     private OclValue requireSingleElement(

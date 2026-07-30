@@ -21,7 +21,3 @@ public enum BinaryOperator {
     IMPLIES
 }
 
-public enum UnaryOperator {
-    NOT,
-    NEGATE
-}

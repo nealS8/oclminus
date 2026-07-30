@@ -102,4 +102,93 @@ class LexerTest {
         assertEquals(TokenType.EOF, tokens.get(3).type());
     }
 
+    @Test
+    void tokenizesAllArithmeticOperators() {
+        List<Token> tokens =
+                new Lexer("1 + 2 - 3 * 4 / 5").tokenize();
+
+        assertEquals(
+                List.of(
+                        TokenType.INTEGER,
+                        TokenType.PLUS,
+                        TokenType.INTEGER,
+                        TokenType.MINUS,
+                        TokenType.INTEGER,
+                        TokenType.STAR,
+                        TokenType.INTEGER,
+                        TokenType.SLASH,
+                        TokenType.INTEGER,
+                        TokenType.EOF
+                ),
+                tokens.stream()
+                        .map(Token::type)
+                        .toList()
+        );
+    }
+
+    @Test
+    void tokenizesAllComparisonOperators() {
+        List<Token> tokens =
+                new Lexer(
+                        "1 = 1 <> 2 < 3 <= 4 > 3 >= 2"
+                ).tokenize();
+
+        assertEquals(
+                List.of(
+                        TokenType.INTEGER,
+                        TokenType.EQUAL,
+                        TokenType.INTEGER,
+
+                        TokenType.NOT_EQUAL,
+                        TokenType.INTEGER,
+
+                        TokenType.LESS_THAN,
+                        TokenType.INTEGER,
+
+                        TokenType.LESS_THAN_OR_EQUAL,
+                        TokenType.INTEGER,
+
+                        TokenType.GREATER_THAN,
+                        TokenType.INTEGER,
+
+                        TokenType.GREATER_THAN_OR_EQUAL,
+                        TokenType.INTEGER,
+
+                        TokenType.EOF
+                ),
+                tokens.stream()
+                        .map(Token::type)
+                        .toList()
+        );
+    }
+
+    @Test
+    void tokenizesLogicalOperatorsAndParentheses() {
+        List<Token> tokens =
+                new Lexer(
+                        "not (true and false) or true xor false implies true"
+                ).tokenize();
+
+        assertEquals(
+                List.of(
+                        TokenType.NOT,
+                        TokenType.LEFT_PAREN,
+                        TokenType.TRUE,
+                        TokenType.AND,
+                        TokenType.FALSE,
+                        TokenType.RIGHT_PAREN,
+                        TokenType.OR,
+                        TokenType.TRUE,
+                        TokenType.XOR,
+                        TokenType.FALSE,
+                        TokenType.IMPLIES,
+                        TokenType.TRUE,
+                        TokenType.EOF
+                ),
+                tokens.stream()
+                        .map(Token::type)
+                        .toList()
+        );
+    }
+
 }

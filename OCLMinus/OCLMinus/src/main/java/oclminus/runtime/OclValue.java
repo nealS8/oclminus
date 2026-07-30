@@ -1,5 +1,5 @@
 package oclminus.runtime;
 
 public sealed interface OclValue
-        permits OclInteger, OclBoolean {
+        permits OclInteger, OclBoolean, OclRelation {
 }

@@ -70,15 +70,53 @@ public final class Interpreter {
     }
 
     private OclValue evaluateBinaryExpression(
-            BinaryExpression expression
+        BinaryExpression expression
     ) {
         OclValue leftValue = evaluate(expression.left());
         OclValue rightValue = evaluate(expression.right());
 
         return switch (expression.operator()) {
-            case PLUS -> add(leftValue, rightValue);
-            case MULTIPLY -> multiply(leftValue, rightValue);
-            case EQUAL -> equal(leftValue, rightValue);
+            case PLUS ->
+                    add(leftValue, rightValue);
+
+            case MINUS ->
+                    subtract(leftValue, rightValue);
+
+            case MULTIPLY ->
+                    multiply(leftValue, rightValue);
+
+            case DIVIDE ->
+                    divide(leftValue, rightValue);
+
+            case EQUAL ->
+                    equal(leftValue, rightValue);
+
+            case NOT_EQUAL ->
+                    notEqual(leftValue, rightValue);
+
+            case LESS_THAN ->
+                    lessThan(leftValue, rightValue);
+
+            case LESS_THAN_OR_EQUAL ->
+                    lessThanOrEqual(leftValue, rightValue);
+
+            case GREATER_THAN ->
+                    greaterThan(leftValue, rightValue);
+
+            case GREATER_THAN_OR_EQUAL ->
+                    greaterThanOrEqual(leftValue, rightValue);
+
+            case AND ->
+                    and(leftValue, rightValue);
+
+            case OR ->
+                    or(leftValue, rightValue);
+
+            case XOR ->
+                    xor(leftValue, rightValue);
+
+            case IMPLIES ->
+                    implies(leftValue, rightValue);
         };
     }
 
@@ -196,6 +234,313 @@ public final class Interpreter {
 
         return new OclRelation(
                 List.of(result)
+        );
+    }
+
+    private OclValue subtract(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.MINUS
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.MINUS
+                );
+
+        OclInteger result = new OclInteger(
+                leftInteger.value()
+                        - rightInteger.value()
+        );
+
+        return new OclRelation(
+                List.of(result)
+        );
+    }
+
+    private OclValue divide(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.DIVIDE
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.DIVIDE
+                );
+
+        if (rightInteger.value() == 0) {
+            throw new ArithmeticException(
+                    "Division durch null ist nicht erlaubt."
+            );
+        }
+
+        OclInteger result = new OclInteger(
+                leftInteger.value()
+                        / rightInteger.value()
+        );
+
+        return new OclRelation(
+                List.of(result)
+        );
+    }
+
+    private OclValue notEqual(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclValue leftElement =
+                requireSingleElement(
+                        leftValue,
+                        BinaryOperator.NOT_EQUAL
+                );
+
+        OclValue rightElement =
+                requireSingleElement(
+                        rightValue,
+                        BinaryOperator.NOT_EQUAL
+                );
+
+        boolean result =
+                !leftElement.equals(rightElement);
+
+        return new OclRelation(
+                List.of(new OclBoolean(result))
+        );
+    }
+
+    private OclValue lessThan(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.LESS_THAN
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.LESS_THAN
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftInteger.value()
+                                        < rightInteger.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue lessThanOrEqual(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.LESS_THAN_OR_EQUAL
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.LESS_THAN_OR_EQUAL
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftInteger.value()
+                                        <= rightInteger.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue greaterThan(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.GREATER_THAN
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.GREATER_THAN
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftInteger.value()
+                                        > rightInteger.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue greaterThanOrEqual(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclInteger leftInteger =
+                requireSingleInteger(
+                        leftValue,
+                        BinaryOperator.GREATER_THAN_OR_EQUAL
+                );
+
+        OclInteger rightInteger =
+                requireSingleInteger(
+                        rightValue,
+                        BinaryOperator.GREATER_THAN_OR_EQUAL
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftInteger.value()
+                                        >= rightInteger.value()
+                        )
+                )
+        );
+    }
+
+    private OclBoolean requireSingleBoolean(
+        OclValue value,
+        BinaryOperator operator
+    ) {
+        OclValue element =
+                requireSingleElement(value, operator);
+
+        if (!(element instanceof OclBoolean booleanValue)) {
+            throw new IllegalStateException(
+                    "Der Operator '"
+                            + operator
+                            + "' erwartet einen Boolean."
+            );
+        }
+
+        return booleanValue;
+    }
+
+    private OclValue and(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclBoolean leftBoolean =
+                requireSingleBoolean(
+                        leftValue,
+                        BinaryOperator.AND
+                );
+
+        OclBoolean rightBoolean =
+                requireSingleBoolean(
+                        rightValue,
+                        BinaryOperator.AND
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftBoolean.value()
+                                        && rightBoolean.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue or(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclBoolean leftBoolean =
+                requireSingleBoolean(
+                        leftValue,
+                        BinaryOperator.OR
+                );
+
+        OclBoolean rightBoolean =
+                requireSingleBoolean(
+                        rightValue,
+                        BinaryOperator.OR
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftBoolean.value()
+                                        || rightBoolean.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue xor(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclBoolean leftBoolean =
+                requireSingleBoolean(
+                        leftValue,
+                        BinaryOperator.XOR
+                );
+
+        OclBoolean rightBoolean =
+                requireSingleBoolean(
+                        rightValue,
+                        BinaryOperator.XOR
+                );
+
+        return new OclRelation(
+                List.of(
+                        new OclBoolean(
+                                leftBoolean.value()
+                                        ^ rightBoolean.value()
+                        )
+                )
+        );
+    }
+
+    private OclValue implies(
+        OclValue leftValue,
+        OclValue rightValue
+    ) {
+        OclBoolean leftBoolean =
+                requireSingleBoolean(
+                        leftValue,
+                        BinaryOperator.IMPLIES
+                );
+
+        OclBoolean rightBoolean =
+                requireSingleBoolean(
+                        rightValue,
+                        BinaryOperator.IMPLIES
+                );
+
+        boolean result =
+                !leftBoolean.value()
+                        || rightBoolean.value();
+
+        return new OclRelation(
+                List.of(new OclBoolean(result))
         );
     }
 

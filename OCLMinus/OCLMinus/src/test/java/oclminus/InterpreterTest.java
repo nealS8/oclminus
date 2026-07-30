@@ -13,7 +13,6 @@ import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
-
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -270,6 +269,61 @@ void evaluatesDifferentTypesAsNotEqual() {
                     List.of(new OclBoolean(false))
             ),
             interpreter.evaluate(expression)
+    );
+}
+
+@Test
+void evaluatesSubtraction() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(7),
+                    BinaryOperator.MINUS,
+                    new IntegerLiteral(3)
+            );
+
+    OclValue result =
+            interpreter.evaluate(expression);
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclInteger(4))
+            ),
+            result
+    );
+}
+
+@Test
+void evaluatesDivision() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(8),
+                    BinaryOperator.DIVIDE,
+                    new IntegerLiteral(2)
+            );
+
+    OclValue result =
+            interpreter.evaluate(expression);
+
+    assertEquals(
+            new OclRelation(
+                    List.of(new OclInteger(4))
+            ),
+            result
+    );
+}
+
+@Test
+void rejectsDivisionByZero() {
+    Expression expression =
+            new BinaryExpression(
+                    new IntegerLiteral(8),
+                    BinaryOperator.DIVIDE,
+                    new IntegerLiteral(0)
+            );
+
+    assertThrows(
+            ArithmeticException.class,
+            () -> interpreter.evaluate(expression)
     );
 }
 }

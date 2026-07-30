@@ -41,15 +41,73 @@ public final class Parser {
             return parseEquality();
         }
 
-        private Expression parseEquality() {
+    private Expression parseEquality() {
+        Expression expression = parseComparison();
+
+        while (match(
+                TokenType.EQUAL,
+                TokenType.NOT_EQUAL
+        )) {
+            BinaryOperator operator =
+                    switch (previous().type()) {
+                        case EQUAL ->
+                                BinaryOperator.EQUAL;
+
+                        case NOT_EQUAL ->
+                                BinaryOperator.NOT_EQUAL;
+
+                        default ->
+                                throw new IllegalStateException(
+                                        "Unerwarteter Gleichheitsoperator."
+                                );
+                    };
+
+            Expression right = parseComparison();
+
+            expression = new BinaryExpression(
+                    expression,
+                    operator,
+                    right
+            );
+        }
+
+        return expression;
+    }
+
+    private Expression parseComparison() {
         Expression expression = parseAddition();
 
-        while (match(TokenType.EQUAL)) {
+        while (match(
+                TokenType.LESS_THAN,
+                TokenType.LESS_THAN_OR_EQUAL,
+                TokenType.GREATER_THAN,
+                TokenType.GREATER_THAN_OR_EQUAL
+        )) {
+            BinaryOperator operator =
+                    switch (previous().type()) {
+                        case LESS_THAN ->
+                                BinaryOperator.LESS_THAN;
+
+                        case LESS_THAN_OR_EQUAL ->
+                                BinaryOperator.LESS_THAN_OR_EQUAL;
+
+                        case GREATER_THAN ->
+                                BinaryOperator.GREATER_THAN;
+
+                        case GREATER_THAN_OR_EQUAL ->
+                                BinaryOperator.GREATER_THAN_OR_EQUAL;
+
+                        default ->
+                                throw new IllegalStateException(
+                                        "Unerwarteter Vergleichsoperator."
+                                );
+                    };
+
             Expression right = parseAddition();
 
             expression = new BinaryExpression(
                     expression,
-                    BinaryOperator.EQUAL,
+                    operator,
                     right
             );
         }

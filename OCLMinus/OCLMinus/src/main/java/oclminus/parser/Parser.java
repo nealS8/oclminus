@@ -60,12 +60,23 @@ public final class Parser {
     private Expression parseAddition() {
         Expression expression = parseMultiplication();
 
-        while (match(TokenType.PLUS)) {
+        while (match(
+                TokenType.PLUS,
+                TokenType.MINUS
+        )) {
+
+            BinaryOperator operator =
+                    switch (previous().type()) {
+                        case PLUS -> BinaryOperator.PLUS;
+                        case MINUS -> BinaryOperator.MINUS;
+                        default -> throw new IllegalStateException();
+                    };
+
             Expression right = parseMultiplication();
 
             expression = new BinaryExpression(
                     expression,
-                    BinaryOperator.PLUS,
+                    operator,
                     right
             );
         }
@@ -76,13 +87,24 @@ public final class Parser {
     private Expression parseMultiplication() {
         Expression expression = parsePropertyAccess();
 
-        while (match(TokenType.STAR)) {
+        while (match(
+                TokenType.STAR,
+                TokenType.SLASH
+        )) {
+
+            BinaryOperator operator =
+                    switch (previous().type()) {
+                        case STAR -> BinaryOperator.MULTIPLY;
+                        case SLASH -> BinaryOperator.DIVIDE;
+                        default -> throw new IllegalStateException();
+                    };
+
             Expression right = parsePropertyAccess();
 
             expression = new BinaryExpression(
-                expression,
-                BinaryOperator.MULTIPLY,
-                right
+                    expression,
+                    operator,
+                    right
             );
         }
 
@@ -151,13 +173,15 @@ public final class Parser {
     );
 }
 
-    private boolean match(TokenType expectedType) {
-        if (!check(expectedType)) {
-            return false;
+    private boolean match(TokenType... expectedTypes) {
+        for (TokenType expectedType : expectedTypes) {
+            if (check(expectedType)) {
+                advance();
+                return true;
+            }
         }
 
-        advance();
-        return true;
+        return false;
     }
 
     private Token consume(

@@ -38,8 +38,68 @@ public final class Parser {
     }
 
     private Expression parseExpression() {
-            return parseEquality();
+            return parseImplies();
         }
+
+    private Expression parseImplies() {
+        Expression expression = parseOr();
+
+        while (match(TokenType.IMPLIES)) {
+
+            Expression right = parseOr();
+
+            expression = new BinaryExpression(
+                    expression,
+                    BinaryOperator.IMPLIES,
+                    right
+            );
+        }
+
+        return expression;
+    }
+
+    private Expression parseOr() {
+        Expression expression = parseAnd();
+
+        while (match(
+                TokenType.OR,
+                TokenType.XOR
+        )) {
+
+            BinaryOperator operator =
+                    switch (previous().type()) {
+                        case OR -> BinaryOperator.OR;
+                        case XOR -> BinaryOperator.XOR;
+                        default -> throw new IllegalStateException();
+                    };
+
+            Expression right = parseAnd();
+
+            expression = new BinaryExpression(
+                    expression,
+                    operator,
+                    right
+            );
+        }
+
+        return expression;
+    }
+
+    private Expression parseAnd() {
+        Expression expression = parseEquality();
+
+        while (match(TokenType.AND)) {
+            Expression right = parseEquality();
+
+            expression = new BinaryExpression(
+                    expression,
+                    BinaryOperator.AND,
+                    right
+            );
+        }
+
+        return expression;
+    }
 
     private Expression parseEquality() {
         Expression expression = parseComparison();

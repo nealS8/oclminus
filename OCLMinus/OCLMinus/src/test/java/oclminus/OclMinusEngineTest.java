@@ -1,6 +1,7 @@
 package oclminus;
 
 import oclminus.runtime.Environment;
+import oclminus.runtime.ObjectStore;
 import oclminus.runtime.OclBoolean;
 import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclObject;
@@ -295,6 +296,99 @@ class OclMinusEngineTest {
         assertEquals(
                 new OclRelation(List.of()),
                 engine.evaluate("company.employees.age")
+        );
+        }
+
+@Test
+        void evaluatesAllInstancesThroughEngine() {
+        OclObject alice =
+                new OclObject(
+                        "alice",
+                        "Person",
+                        Map.of()
+                );
+
+        OclObject bob =
+                new OclObject(
+                        "bob",
+                        "Person",
+                        Map.of()
+                );
+
+        OclObject company =
+                new OclObject(
+                        "company1",
+                        "Company",
+                        Map.of()
+                );
+
+        ObjectStore objectStore =
+                new ObjectStore();
+
+        objectStore.add(alice);
+        objectStore.add(bob);
+        objectStore.add(company);
+
+        OclMinusEngine engine =
+                new OclMinusEngine(
+                        new Environment(),
+                        objectStore
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(alice, bob)
+                ),
+                engine.evaluate("all Person")
+        );
+        }
+
+@Test
+        void evaluatesPropertyAccessAfterAllInstances() {
+        OclObject alice =
+                new OclObject(
+                        "alice",
+                        "Person",
+                        Map.of(
+                                "age",
+                                new OclRelation(
+                                        List.of(new OclInteger(25))
+                                )
+                        )
+                );
+
+        OclObject bob =
+                new OclObject(
+                        "bob",
+                        "Person",
+                        Map.of(
+                                "age",
+                                new OclRelation(
+                                        List.of(new OclInteger(31))
+                                )
+                        )
+                );
+
+        ObjectStore objectStore =
+                new ObjectStore();
+
+        objectStore.add(alice);
+        objectStore.add(bob);
+
+        OclMinusEngine engine =
+                new OclMinusEngine(
+                        new Environment(),
+                        objectStore
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(25),
+                                new OclInteger(31)
+                        )
+                ),
+                engine.evaluate("all Person.age")
         );
         }
 }

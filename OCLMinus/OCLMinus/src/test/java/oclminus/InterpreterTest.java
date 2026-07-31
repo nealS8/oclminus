@@ -1,5 +1,6 @@
 package oclminus;
 
+import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
@@ -8,12 +9,16 @@ import oclminus.ast.IntegerLiteral;
 import oclminus.ast.VariableExpression;
 import oclminus.runtime.Environment;
 import oclminus.runtime.Interpreter;
+import oclminus.runtime.ObjectStore;
 import oclminus.runtime.OclBoolean;
 import oclminus.runtime.OclInteger;
+import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
 import org.junit.jupiter.api.Test;
 import java.util.List;
+import java.util.Map;
+
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -595,4 +600,68 @@ void rejectsComparisonOfBooleans() {
             () -> interpreter.evaluate(expression)
     );
 }
+
+@Test
+        void evaluatesAllInstancesExpression() {
+        OclObject alice =
+                new OclObject(
+                        "alice",
+                        "Person",
+                        Map.of()
+                );
+
+        OclObject bob =
+                new OclObject(
+                        "bob",
+                        "Person",
+                        Map.of()
+                );
+
+        OclObject company =
+                new OclObject(
+                        "company1",
+                        "Company",
+                        Map.of()
+                );
+
+        ObjectStore objectStore =
+                new ObjectStore();
+
+        objectStore.add(alice);
+        objectStore.add(bob);
+        objectStore.add(company);
+
+        Interpreter interpreter =
+                new Interpreter(
+                        new Environment(),
+                        objectStore
+                );
+
+        OclValue result = interpreter.evaluate(
+                new AllInstancesExpression("Person")
+        );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(alice, bob)
+                ),
+                result
+        );
+        }
+
+@Test
+        void allInstancesReturnsEmptyRelationForUnknownClass() {
+        Interpreter interpreter =
+                new Interpreter(
+                        new Environment(),
+                        new ObjectStore()
+                );
+
+        assertEquals(
+                new OclRelation(List.of()),
+                interpreter.evaluate(
+                        new AllInstancesExpression("Person")
+                )
+        );
+        }
 }

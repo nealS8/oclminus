@@ -7,7 +7,7 @@ import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
-
+import oclminus.ast.AllInstancesExpression;
 import java.util.ArrayList;
 import java.util.List;
 import oclminus.ast.UnaryExpression;
@@ -17,19 +17,42 @@ public final class Interpreter {
 
     private final Environment environment;
 
+    private final ObjectStore objectStore;
+
+
     public Interpreter() {
-        this(new Environment());
+    this(
+            new Environment(),
+            new ObjectStore()
+    );
+}
+
+public Interpreter(Environment environment) {
+    this(
+            environment,
+            new ObjectStore()
+    );
+}
+
+public Interpreter(
+        Environment environment,
+        ObjectStore objectStore
+) {
+    if (environment == null) {
+        throw new IllegalArgumentException(
+                "Environment darf nicht null sein."
+        );
     }
 
-    public Interpreter(Environment environment) {
-        if (environment == null) {
-            throw new IllegalArgumentException(
-                    "Environment darf nicht null sein."
-            );
-        }
-
-        this.environment = environment;
+    if (objectStore == null) {
+        throw new IllegalArgumentException(
+                "ObjectStore darf nicht null sein."
+        );
     }
+
+    this.environment = environment;
+    this.objectStore = objectStore;
+}
 
     public OclValue evaluate(Expression expression) {
         if (expression == null) {
@@ -60,6 +83,12 @@ public final class Interpreter {
 
         if (expression instanceof VariableExpression variableExpression) {
             return environment.lookup(variableExpression.name());
+        }
+
+        if (expression instanceof AllInstancesExpression allInstancesExpression) {
+                return objectStore.allInstances(
+                        allInstancesExpression.className()
+                );
         }
 
         if (expression instanceof UnaryExpression unaryExpression) {

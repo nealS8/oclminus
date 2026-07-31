@@ -11,7 +11,7 @@ import oclminus.ast.VariableExpression;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
-
+import oclminus.ast.AllInstancesExpression;
 import java.util.List;
 
 public final class Parser {
@@ -270,11 +270,19 @@ public final class Parser {
 
     private Expression parsePrimary() {
         if (match(TokenType.INTEGER)) {
-            return new IntegerLiteral(
-                    Integer.parseInt(
-                            previous().lexeme()
-                    )
-            );
+            Token token = previous();
+
+            try {
+                int value = Integer.parseInt(token.lexeme());
+                return new IntegerLiteral(value);
+            } catch (NumberFormatException exception) {
+                throw new ParseException(
+                        "Ungültige Ganzzahl '"
+                                + token.lexeme()
+                                + "' an Position "
+                                + token.position()
+                );
+            }
         }
 
         if (match(TokenType.TRUE)) {
@@ -285,28 +293,33 @@ public final class Parser {
             return new BooleanLiteral(false);
         }
 
+        if (match(TokenType.ALL)) {
+            Token classNameToken = consume(
+                    TokenType.IDENTIFIER,
+                    "Nach 'all' wurde ein Klassenname erwartet."
+            );
+
+            return new AllInstancesExpression(
+                    classNameToken.lexeme()
+            );
+        }
+
         if (match(TokenType.IDENTIFIER)) {
+            Token token = previous();
+
             return new VariableExpression(
-                    previous().lexeme()
+                    token.lexeme()
             );
         }
 
-        if (match(TokenType.LEFT_PAREN)) {
-            Expression expression = parseExpression();
-
-            consume(
-                    TokenType.RIGHT_PAREN,
-                    "Nach dem Ausdruck wurde ')' erwartet."
-            );
-
-            return expression;
-        }
+        Token token = peek();
 
         throw new ParseException(
-                "Unerwartetes Token: "
-                        + peek().lexeme()
-                        + " an Position "
-                        + peek().position()
+                "Grundausdruck erwartet, aber '"
+                        + token.lexeme()
+                        + "' an Position "
+                        + token.position()
+                        + " gefunden."
         );
     }
 

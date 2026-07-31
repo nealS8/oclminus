@@ -1,5 +1,6 @@
 package oclminus;
 
+import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
@@ -397,5 +398,34 @@ class ParserTest {
         );
 
         assertEquals(expected, expression);
+        }
+
+@Test
+        void parsesAllInstancesExpression() {
+        Lexer lexer = new Lexer("all Person");
+        Parser parser = new Parser(lexer.tokenize());
+
+        Expression expression = parser.parse();
+
+        assertEquals(
+                new AllInstancesExpression("Person"),
+                expression
+        );
+        }
+
+@Test
+        void parsesPropertyAccessAfterAllInstances() {
+        Lexer lexer = new Lexer("all Person.age");
+        Parser parser = new Parser(lexer.tokenize());
+
+        Expression expression = parser.parse();
+
+        assertEquals(
+                new PropertyAccessExpression(
+                        new AllInstancesExpression("Person"),
+                        "age"
+                ),
+                expression
+        );
         }
 }

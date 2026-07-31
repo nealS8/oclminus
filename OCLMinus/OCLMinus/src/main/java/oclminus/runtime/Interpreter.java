@@ -5,7 +5,10 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
+
+import java.util.ArrayList;
 import java.util.List;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
@@ -41,6 +44,10 @@ public final class Interpreter {
                     new OclInteger(integerLiteral.value())
                 )
             );
+        }
+
+        if (expression instanceof PropertyAccessExpression propertyAccessExpression) {
+                return evaluatePropertyAccess(propertyAccessExpression);
         }
 
         if (expression instanceof BooleanLiteral booleanLiteral) {
@@ -422,6 +429,48 @@ public final class Interpreter {
                 )
         );
     }
+
+    private OclValue evaluatePropertyAccess(
+        PropertyAccessExpression expression
+        ) {
+        OclValue target =
+                evaluate(expression.target());
+
+        if (!(target instanceof OclRelation relation)) {
+                throw new IllegalStateException(
+                        "Property Access erwartet eine Relation."
+                );
+        }
+
+        return accessProperty(
+                relation,
+                expression.propertyName()
+        );
+}
+
+        private OclRelation accessProperty(
+                OclRelation relation,
+                String propertyName
+        ) {
+        List<OclValue> result =
+                new ArrayList<>();
+
+        for (OclValue value : relation.elements()) {
+
+                if (!(value instanceof OclObject object)) {
+                throw new IllegalStateException(
+                        "Property Access kann nur auf Objekten erfolgen."
+                );
+                }
+
+                OclRelation property =
+                        object.property(propertyName);
+
+                result.addAll(property.elements());
+        }
+
+        return new OclRelation(result);
+        }
 
     private OclBoolean requireSingleBoolean(
         OclValue value,

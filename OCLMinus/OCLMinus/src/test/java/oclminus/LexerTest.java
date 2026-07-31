@@ -191,4 +191,18 @@ class LexerTest {
         );
     }
 
+@Test
+        void tokenizesAllExpression() {
+        Lexer lexer = new Lexer("all Person");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.ALL, tokens.get(0).type());
+        assertEquals("all", tokens.get(0).lexeme());
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(1).type());
+        assertEquals("Person", tokens.get(1).lexeme());
+
+        assertEquals(TokenType.EOF, tokens.get(2).type());
+        }
 }

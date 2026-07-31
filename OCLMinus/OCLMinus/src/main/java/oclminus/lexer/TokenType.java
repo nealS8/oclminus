@@ -9,7 +9,7 @@ public enum TokenType {
     STAR,
     DOT,
     EQUAL,
-
+    ALL,
     LEFT_PAREN,
     RIGHT_PAREN,
 

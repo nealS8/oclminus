@@ -146,6 +146,9 @@ public final class Lexer {
             case "not" ->
                     TokenType.NOT;
 
+            case "all" ->
+                    TokenType.ALL;
+
             default ->
                     TokenType.IDENTIFIER;
         };

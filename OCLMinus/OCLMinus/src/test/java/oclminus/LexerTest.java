@@ -315,4 +315,69 @@ class LexerTest {
         assertEquals(TokenType.IDENTIFIER, tokens.get(2).type());
         assertEquals(TokenType.EOF, tokens.get(3).type());
         }
+
+@Test
+        void tokenizesCollectionCoercion() {
+        Lexer lexer =
+                new Lexer("value as Set");
+
+        List<Token> tokens =
+                lexer.tokenize();
+
+        assertEquals(
+                TokenType.IDENTIFIER,
+                tokens.get(0).type()
+        );
+
+        assertEquals(
+                TokenType.AS,
+                tokens.get(1).type()
+        );
+
+        assertEquals(
+                TokenType.SET,
+                tokens.get(2).type()
+        );
+
+        assertEquals(
+                TokenType.EOF,
+                tokens.get(3).type()
+        );
+        }
+
+@Test
+        void tokenizesAllCollectionKinds() {
+        Lexer lexer =
+                new Lexer(
+                        "Set Bag OSet Seq"
+                );
+
+        List<Token> tokens =
+                lexer.tokenize();
+
+        assertEquals(
+                TokenType.SET,
+                tokens.get(0).type()
+        );
+
+        assertEquals(
+                TokenType.BAG,
+                tokens.get(1).type()
+        );
+
+        assertEquals(
+                TokenType.OSET,
+                tokens.get(2).type()
+        );
+
+        assertEquals(
+                TokenType.SEQ,
+                tokens.get(3).type()
+        );
+
+        assertEquals(
+                TokenType.EOF,
+                tokens.get(4).type()
+        );
+        }
 }

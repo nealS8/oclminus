@@ -16,6 +16,8 @@ import oclminus.ast.UnaryOperator;
 import oclminus.ast.AllInstancesExpression;
 import java.util.List;
 import oclminus.ast.NoExpression;
+import oclminus.ast.CoercionExpression;
+import oclminus.type.CollectionKind;
 
 public final class Parser {
 
@@ -58,7 +60,7 @@ public final class Parser {
             );
         }
 
-        return parsePropertyAccess();
+        return parseCoercion();
     }
 
     private Expression parseExpression() {
@@ -285,6 +287,53 @@ public final class Parser {
         }
 
         return expression;
+    }
+
+    private Expression parseCoercion() {
+        Expression expression =
+                parsePropertyAccess();
+
+        while (match(TokenType.AS)) {
+            CollectionKind collectionKind =
+                    parseCollectionKind();
+
+            expression =
+                    new CoercionExpression(
+                            expression,
+                            collectionKind
+                    );
+        }
+
+        return expression;
+    }
+
+    private CollectionKind parseCollectionKind() {
+        if (match(TokenType.SET)) {
+            return CollectionKind.SET;
+        }
+
+        if (match(TokenType.BAG)) {
+            return CollectionKind.BAG;
+        }
+
+        if (match(TokenType.OSET)) {
+            return CollectionKind.ORDERED_SET;
+        }
+
+        if (match(TokenType.SEQ)) {
+            return CollectionKind.SEQUENCE;
+        }
+
+        Token token = peek();
+
+        throw new ParseException(
+                "Nach 'as' wurde ein Collection-Kind "
+                        + "erwartet, aber '"
+                        + token.lexeme()
+                        + "' an Position "
+                        + token.position()
+                        + " gefunden."
+        );
     }
 
     private Expression parsePrimary() {

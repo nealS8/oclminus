@@ -1,4 +1,7 @@
 package oclminus.type;
 
-public interface MemberType {
+public sealed interface MemberType
+        permits PrimitiveType,
+                ClassType,
+                CType {
 }

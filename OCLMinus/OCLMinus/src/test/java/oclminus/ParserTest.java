@@ -4,6 +4,7 @@ import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
+import oclminus.ast.CoercionExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.LiftExpression;
@@ -15,6 +16,8 @@ import oclminus.ast.VariableExpression;
 import oclminus.lexer.Lexer;
 import oclminus.parser.ParseException;
 import oclminus.parser.Parser;
+import oclminus.type.CollectionKind;
+
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -544,6 +547,71 @@ class ParserTest {
                         new VariableExpression("c")
                 ),
                 expression
+        );
+        }
+
+@Test
+        void parsesAllCollectionCoercions() {
+        assertEquals(
+                new CoercionExpression(
+                        new VariableExpression("value"),
+                        CollectionKind.SET
+                ),
+                parse("value as Set")
+        );
+
+        assertEquals(
+                new CoercionExpression(
+                        new VariableExpression("value"),
+                        CollectionKind.BAG
+                ),
+                parse("value as Bag")
+        );
+
+        assertEquals(
+                new CoercionExpression(
+                        new VariableExpression("value"),
+                        CollectionKind.ORDERED_SET
+                ),
+                parse("value as OSet")
+        );
+
+        assertEquals(
+                new CoercionExpression(
+                        new VariableExpression("value"),
+                        CollectionKind.SEQUENCE
+                ),
+                parse("value as Seq")
+        );
+        }
+
+@Test
+        void parsesChainedCoercionsLeftAssociatively() {
+        assertEquals(
+                new CoercionExpression(
+                        new CoercionExpression(
+                                new VariableExpression("value"),
+                                CollectionKind.BAG
+                        ),
+                        CollectionKind.SET
+                ),
+                parse("value as Bag as Set")
+        );
+        }
+
+@Test
+        void parsesCoercionAfterLiftAndPropertyAccess() {
+        assertEquals(
+                new CoercionExpression(
+                        new LiftExpression(
+                                new PropertyAccessExpression(
+                                        new VariableExpression("person"),
+                                        "age"
+                                )
+                        ),
+                        CollectionKind.SET
+                ),
+                parse("person.age↑ as Set")
         );
         }
 }

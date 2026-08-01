@@ -161,6 +161,21 @@ public final class Lexer {
             case "no" ->
                     TokenType.NO;
 
+            case "as" ->
+                    TokenType.AS;
+
+            case "Set" ->
+                    TokenType.SET;
+
+            case "Bag" ->
+                    TokenType.BAG;
+
+            case "OSet" ->
+                    TokenType.OSET;
+
+            case "Seq" ->
+                    TokenType.SEQ;
+
             default ->
                     TokenType.IDENTIFIER;
         };

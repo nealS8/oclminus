@@ -3,37 +3,43 @@ package oclminus.runtime;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
+import oclminus.ast.CoercionExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
+import oclminus.type.TypeChecker;
 import oclminus.ast.AllInstancesExpression;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
 import oclminus.ast.NoExpression;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
+import oclminus.type.TypeChecker;
 
 public final class Interpreter {
 
     private final Environment environment;
-
     private final ObjectStore objectStore;
-
+    private final TypeChecker typeChecker;
 
     public Interpreter() {
     this(
             new Environment(),
-            new ObjectStore()
+            new ObjectStore(),
+            new TypeChecker()
     );
 }
 
 public Interpreter(Environment environment) {
     this(
             environment,
-            new ObjectStore()
+            new ObjectStore(),
+            new TypeChecker()
     );
 }
 
@@ -41,20 +47,32 @@ public Interpreter(
         Environment environment,
         ObjectStore objectStore
 ) {
-    if (environment == null) {
-        throw new IllegalArgumentException(
-                "Environment darf nicht null sein."
-        );
-    }
+    this(
+            environment,
+            objectStore,
+            new TypeChecker()
+    );
+}
 
-    if (objectStore == null) {
-        throw new IllegalArgumentException(
-                "ObjectStore darf nicht null sein."
-        );
-    }
+public Interpreter(
+        Environment environment,
+        ObjectStore objectStore,
+        TypeChecker typeChecker
+) {
+    this.environment = Objects.requireNonNull(
+            environment,
+            "Environment darf nicht null sein."
+    );
 
-    this.environment = environment;
-    this.objectStore = objectStore;
+    this.objectStore = Objects.requireNonNull(
+            objectStore,
+            "ObjectStore darf nicht null sein."
+    );
+
+    this.typeChecker = Objects.requireNonNull(
+            typeChecker,
+            "TypeChecker darf nicht null sein."
+    );
 }
 
     public OclValue evaluate(Expression expression) {
@@ -112,6 +130,10 @@ public Interpreter(
 
         if (expression instanceof LowerExpression lowerExpression) {
                 return evaluateLower(lowerExpression);
+        }
+
+        if (expression instanceof CoercionExpression coercionExpression) {
+                return evaluateCoercion(coercionExpression);
         }
 
         throw new IllegalStateException(
@@ -801,4 +823,37 @@ private OclRelation merge(OclValue leftValue, OclValue rightValue) {
 
     return new OclRelation(result);
 }
+
+private OclRelation evaluateCoercion(
+        CoercionExpression expression
+        ) {
+        OclValue value = evaluate(expression.operand());
+
+        if (!(value instanceof OclRelation relation)) {
+                throw new IllegalStateException(
+                        "Collection-Coercion erwartet eine Relation."
+                );
+        }
+
+        if (!expression.collectionKind().isUnique()) {
+                return relation;
+        }
+
+        return removeDuplicates(relation);
+        }
+
+private OclRelation removeDuplicates(
+        OclRelation relation
+        ) {
+        List<OclValue> uniqueElements =
+                new ArrayList<>();
+
+        for (OclValue element : relation.elements()) {
+                if (!uniqueElements.contains(element)) {
+                uniqueElements.add(element);
+                }
+        }
+
+        return new OclRelation(uniqueElements);
+        }
 }

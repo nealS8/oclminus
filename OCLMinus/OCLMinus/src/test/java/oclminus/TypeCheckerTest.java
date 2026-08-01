@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import oclminus.ast.BinaryExpression;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
 import oclminus.ast.IntegerLiteral;
@@ -12,11 +13,9 @@ import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
 import oclminus.ast.VariableExpression;
-import oclminus.type.TypeChecker;
-import oclminus.type.CType;
-import oclminus.type.PrimitiveType;
 import oclminus.type.*;
-
+import oclminus.ast.Expression;
+import oclminus.ast.BinaryOperator;
 
 final class TypeCheckerTest {
 
@@ -172,6 +171,99 @@ final class TypeCheckerTest {
                                 CollectionKind.SET
                         )
                 )
+        );
+    }
+
+    @Test
+    void determinesMergeTypeForSetAndSingleton() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SET
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new CType(
+                        PrimitiveType.INTEGER,
+                        1,
+                        null,
+                        true,
+                        false
+                ),
+                checker.determineType(expression)
+        );
+    }
+
+    @Test
+    void determinesMergeTypeForBagAndSingleton() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.BAG
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new CType(
+                        PrimitiveType.INTEGER,
+                        1,
+                        null,
+                        false,
+                        false
+                ),
+                checker.determineType(expression)
+        );
+    }
+
+    @Test
+    void mergeRejectsSingletonAsLeftOperand() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(2)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+    }
+
+    @Test
+    void mergeRejectsIncompatibleMemberTypes() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SET
+                        ),
+                        BinaryOperator.MERGE,
+                        new BooleanLiteral(true)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
         );
     }
 }

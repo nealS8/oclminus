@@ -10,6 +10,8 @@ import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
 import oclminus.ast.VariableExpression;
+import oclminus.ast.BinaryExpression;
+import oclminus.ast.BinaryOperator;
 
 public final class TypeChecker {
 
@@ -98,6 +100,10 @@ public final class TypeChecker {
             );
         }
 
+        if (expression instanceof BinaryExpression binaryExpression) {
+            return determineBinaryType(binaryExpression);
+        }
+
         throw new TypeCheckException(
                 "Für den Ausdruckstyp '"
                         + expression.getClass().getSimpleName()
@@ -156,5 +162,101 @@ public final class TypeChecker {
             default ->
                     new ClassType(typeName);
         };
+    }
+
+    private CType determineBinaryType(
+        BinaryExpression expression
+    ) {
+        if (expression.operator() == BinaryOperator.MERGE) {
+            return determineMergeType(expression);
+        }
+
+        throw new TypeCheckException(
+                "Für den binären Operator '"
+                        + expression.operator()
+                        + "' ist noch keine Typregel implementiert."
+        );
+    }
+
+    private CType determineMergeType(
+        BinaryExpression expression
+    ) {
+        CType leftType =
+                determineType(expression.left());
+
+        CType rightType =
+                determineType(expression.right());
+
+        if (!leftType.isCollectionKind()) {
+            throw new TypeCheckException(
+                    "Der linke Operand von Merge muss "
+                            + "ein Collection-Kind besitzen. "
+                            + "Verwende beispielsweise 'as Set', "
+                            + "'as Bag', 'as OSet' oder 'as Seq'."
+            );
+        }
+
+        if (!memberTypesCompatible(
+                leftType.memberType(),
+                rightType.memberType()
+        )) {
+            throw new TypeCheckException(
+                    "Die Membertypen von Merge sind nicht kompatibel: "
+                            + leftType.memberType()
+                            + " und "
+                            + rightType.memberType()
+                            + "."
+            );
+        }
+
+        int lowerBound;
+
+        if (leftType.collectionKind().isUnique()) {
+            lowerBound = Math.max(
+                    leftType.lowerBound(),
+                    rightType.lowerBound()
+            );
+        } else {
+            lowerBound = Math.addExact(
+                    leftType.lowerBound(),
+                    rightType.lowerBound()
+            );
+        }
+
+        Integer upperBound = addUpperBounds(
+                leftType.upperBound(),
+                rightType.upperBound()
+        );
+
+        return new CType(
+                leftType.memberType(),
+                lowerBound,
+                upperBound,
+                leftType.unique(),
+                leftType.ordered()
+        );
+    }
+
+    private boolean memberTypesCompatible(
+        MemberType left,
+        MemberType right
+    ) {
+        if (left.equals(right)) {
+            return true;
+        }
+
+        return left == PrimitiveType.ANY
+                || right == PrimitiveType.ANY;
+    }
+
+    private Integer addUpperBounds(
+        Integer left,
+        Integer right
+    ) {
+        if (left == null || right == null) {
+            return null;
+        }
+
+        return Math.addExact(left, right);
     }
 }

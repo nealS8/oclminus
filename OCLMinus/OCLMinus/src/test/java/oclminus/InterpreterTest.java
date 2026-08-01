@@ -4,6 +4,7 @@ import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
+import oclminus.ast.CoercionExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.LiftExpression;
@@ -18,6 +19,8 @@ import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
+import oclminus.type.CollectionKind;
+
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
@@ -1028,6 +1031,125 @@ void rejectsComparisonOfBooleans() {
                         )
                 ),
                 engine.evaluate("left ⊔ right")
+        );
+        }
+
+@Test
+        void coercionToSetRemovesDuplicates() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        Expression expression =
+                new CoercionExpression(
+                        new VariableExpression("values"),
+                        CollectionKind.SET
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void coercionToBagPreservesDuplicates() {
+        OclRelation original =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(2)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define("values", original);
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                original,
+                interpreter.evaluate(
+                        new CoercionExpression(
+                                new VariableExpression("values"),
+                                CollectionKind.BAG
+                        )
+                )
+        );
+        }
+
+@Test
+        void coercionToOrderedSetPreservesFirstOccurrenceOrder() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(3),
+                                new OclInteger(1),
+                                new OclInteger(3),
+                                new OclInteger(2),
+                                new OclInteger(1)
+                        )
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(3),
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                ),
+                interpreter.evaluate(
+                        new CoercionExpression(
+                                new VariableExpression("values"),
+                                CollectionKind.ORDERED_SET
+                        )
+                )
+        );
+        }
+
+@Test
+        void evaluatesCollectionCoercionThroughEngine() {
+        OclMinusEngine engine =
+                new OclMinusEngine();
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                engine.evaluate("1 as Set")
         );
         }
 }

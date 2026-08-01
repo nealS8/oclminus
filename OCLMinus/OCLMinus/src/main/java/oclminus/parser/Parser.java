@@ -5,6 +5,8 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.LiftExpression;
+import oclminus.ast.LowerExpression;
 import oclminus.lexer.Token;
 import oclminus.lexer.TokenType;
 import oclminus.ast.VariableExpression;
@@ -264,6 +266,23 @@ public final class Parser {
                     expression,
                     propertyToken.lexeme()
             );
+        }
+
+        while (true) {
+
+            if (match(TokenType.LIFT)) {
+                expression =
+                        new LiftExpression(expression);
+                continue;
+            }
+
+            if (match(TokenType.LOWER)) {
+                expression =
+                        new LowerExpression(expression);
+                continue;
+            }
+
+            break;
         }
 
         return expression;

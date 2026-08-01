@@ -13,6 +13,8 @@ import java.util.List;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
 import oclminus.ast.NoExpression;
+import oclminus.ast.LiftExpression;
+import oclminus.ast.LowerExpression;
 
 public final class Interpreter {
 
@@ -102,6 +104,14 @@ public Interpreter(
 
         if (expression instanceof NoExpression) {
                 return new OclRelation(List.of());
+        }
+
+        if (expression instanceof LiftExpression liftExpression) {
+                return evaluateLift(liftExpression);
+        }
+
+        if (expression instanceof LowerExpression lowerExpression) {
+                return evaluateLower(lowerExpression);
         }
 
         throw new IllegalStateException(
@@ -726,4 +736,42 @@ public Interpreter(
 
         return relation.elements().get(0);
     }
+
+    private OclRelation evaluateLower(
+        LowerExpression expression
+        ) {
+        OclValue value = evaluate(expression.operand());
+
+        if (!(value instanceof OclRelation outerRelation)) {
+                throw new IllegalStateException(
+                        "Lower erwartet eine Relation."
+                );
+        }
+
+        if (outerRelation.elements().size() != 1) {
+                throw new IllegalStateException(
+                        "Lower erwartet eine Singleton-Relation."
+                );
+        }
+
+        OclValue innerValue =
+                outerRelation.elements().get(0);
+
+        if (!(innerValue instanceof OclRelation innerRelation)) {
+                throw new IllegalStateException(
+                        "Lower erwartet eine Relation, "
+                                + "die eine Relation enthält."
+                );
+        }
+
+        return innerRelation;
+        }
+
+        private OclRelation evaluateLift(LiftExpression expression) {
+                OclValue value = evaluate(expression.operand());
+
+                return new OclRelation(
+                        List.of(value)
+                );
+        }
 }

@@ -28,5 +28,8 @@ public enum TokenType {
     IMPLIES,
     NOT,
 
+    LIFT,
+    LOWER,
+
     EOF
 }

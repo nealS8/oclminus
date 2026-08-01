@@ -6,6 +6,8 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.LiftExpression;
+import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.UnaryExpression;
@@ -451,6 +453,63 @@ class ParserTest {
         assertThrows(
                 ParseException.class,
                 parser::parse
+        );
+        }
+
+@Test
+        void parsesLiftExpression() {
+        Expression expression =
+                parse("value↑");
+
+        assertEquals(
+                new LiftExpression(
+                        new VariableExpression("value")
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesLowerExpression() {
+        Expression expression =
+                parse("value↓");
+
+        assertEquals(
+                new LowerExpression(
+                        new VariableExpression("value")
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesLiftThenLower() {
+        Expression expression =
+                parse("value↑↓");
+
+        assertEquals(
+                new LowerExpression(
+                        new LiftExpression(
+                                new VariableExpression("value")
+                        )
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesLiftAfterPropertyAccess() {
+        Expression expression =
+                parse("person.age↑");
+
+        assertEquals(
+                new LiftExpression(
+                        new PropertyAccessExpression(
+                                new VariableExpression("person"),
+                                "age"
+                        )
+                ),
+                expression
         );
         }
 }

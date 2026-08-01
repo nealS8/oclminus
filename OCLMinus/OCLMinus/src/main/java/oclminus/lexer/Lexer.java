@@ -67,6 +67,12 @@ public final class Lexer {
 
             case ')' ->
                     addSingleCharacterToken(TokenType.RIGHT_PAREN);
+                    
+            case '↑' ->
+                addSingleCharacterToken(TokenType.LIFT);
+
+            case '↓' ->
+                addSingleCharacterToken(TokenType.LOWER);
 
             default -> {
                 if (Character.isWhitespace(currentCharacter)) {

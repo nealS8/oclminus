@@ -6,6 +6,8 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.LiftExpression;
+import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.runtime.Environment;
@@ -699,6 +701,152 @@ void rejectsComparisonOfBooleans() {
         assertEquals(
                 new OclRelation(List.of()),
                 engine.evaluate("no Person")
+        );
+        }
+
+@Test
+        void evaluatesLiftExpression() {
+        Environment environment =
+                new Environment();
+
+        OclRelation original =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        environment.define("value", original);
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                new OclRelation(
+                        List.of(original)
+                ),
+                interpreter.evaluate(
+                        new LiftExpression(
+                                new VariableExpression("value")
+                        )
+                )
+        );
+        }
+
+@Test
+        void evaluatesLowerExpression() {
+        OclRelation inner =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "value",
+                new OclRelation(
+                        List.of(inner)
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                inner,
+                interpreter.evaluate(
+                        new LowerExpression(
+                                new VariableExpression("value")
+                        )
+                )
+        );
+        }
+
+@Test
+        void liftThenLowerReturnsOriginalRelation() {
+        OclRelation original =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define("value", original);
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        Expression expression =
+                new LowerExpression(
+                        new LiftExpression(
+                                new VariableExpression("value")
+                        )
+                );
+
+        assertEquals(
+                original,
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void lowerRejectsNonSingletonRelation() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "value",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> interpreter.evaluate(
+                        new LowerExpression(
+                                new VariableExpression("value")
+                        )
+                )
+        );
+        }
+
+@Test
+        void evaluatesLiftAndLowerThroughEngine() {
+        OclRelation original =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define("value", original);
+
+        OclMinusEngine engine =
+                new OclMinusEngine(environment);
+
+        assertEquals(
+                original,
+                engine.evaluate("value↑↓")
         );
         }
 }

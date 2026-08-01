@@ -220,4 +220,48 @@ class LexerTest {
 
         assertEquals(TokenType.EOF, tokens.get(2).type());
         }
+
+@Test
+        void tokenizesLiftOperator() {
+        Lexer lexer = new Lexer("value↑");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals("value", tokens.get(0).lexeme());
+
+        assertEquals(TokenType.LIFT, tokens.get(1).type());
+        assertEquals("↑", tokens.get(1).lexeme());
+
+        assertEquals(TokenType.EOF, tokens.get(2).type());
+        }
+
+@Test
+        void tokenizesLowerOperator() {
+        Lexer lexer = new Lexer("value↓");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals("value", tokens.get(0).lexeme());
+
+        assertEquals(TokenType.LOWER, tokens.get(1).type());
+        assertEquals("↓", tokens.get(1).lexeme());
+
+        assertEquals(TokenType.EOF, tokens.get(2).type());
+        }
+
+@Test
+        void tokenizesRepeatedLiftAndLowerOperators() {
+        Lexer lexer = new Lexer("value↑↑↓↓");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals(TokenType.LIFT, tokens.get(1).type());
+        assertEquals(TokenType.LIFT, tokens.get(2).type());
+        assertEquals(TokenType.LOWER, tokens.get(3).type());
+        assertEquals(TokenType.LOWER, tokens.get(4).type());
+        assertEquals(TokenType.EOF, tokens.get(5).type());
+        }
 }

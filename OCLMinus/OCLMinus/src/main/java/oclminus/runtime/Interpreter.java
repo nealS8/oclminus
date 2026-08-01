@@ -8,6 +8,7 @@ import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
+import oclminus.type.CType;
 import oclminus.type.TypeChecker;
 import oclminus.ast.AllInstancesExpression;
 import java.util.ArrayList;
@@ -192,7 +193,11 @@ public Interpreter(
                     implies(leftValue, rightValue);
 
             case MERGE ->
-                    merge(leftValue, rightValue);
+                merge(
+                        expression,
+                        leftValue,
+                        rightValue
+                );
         };
     }
 
@@ -800,29 +805,57 @@ public Interpreter(
                 );
         }
 
-private OclRelation merge(OclValue leftValue, OclValue rightValue) {
-    if (!(leftValue instanceof OclRelation leftRelation)) {
-        throw new IllegalStateException(
-                "Merge erwartet links eine Relation."
-        );
-    }
+private OclRelation merge(
+        BinaryExpression expression,
+        OclValue leftValue,
+        OclValue rightValue
+        ) {
+        if (!(leftValue instanceof OclRelation leftRelation)) {
+                throw new IllegalStateException(
+                        "Merge erwartet links eine Relation."
+                );
+        }
 
-    if (!(rightValue instanceof OclRelation rightRelation)) {
-        throw new IllegalStateException(
-                "Merge erwartet rechts eine Relation."
-        );
-    }
+        if (!(rightValue instanceof OclRelation rightRelation)) {
+                throw new IllegalStateException(
+                        "Merge erwartet rechts eine Relation."
+                );
+        }
 
-    List<OclValue> result = new ArrayList<>(
-            leftRelation.elements()
-    );
+        CType leftType =
+                typeChecker.determineType(
+                        expression.left()
+                );
 
-    result.addAll(
-            rightRelation.elements()
-    );
+        if (!leftType.isCollectionKind()) {
+                throw new IllegalStateException(
+                        "Der linke Operand von Merge besitzt "
+                                + "keinen Collection-Kind."
+                );
+        }
 
-    return new OclRelation(result);
-}
+        List<OclValue> result =
+                new ArrayList<>(
+                        leftRelation.elements()
+                );
+
+        if (!leftType.collectionKind().isUnique()) {
+                result.addAll(
+                        rightRelation.elements()
+                );
+
+                return new OclRelation(result);
+        }
+
+        for (OclValue rightElement
+                : rightRelation.elements()) {
+                if (!result.contains(rightElement)) {
+                result.add(rightElement);
+                }
+        }
+
+        return new OclRelation(result);
+        }
 
 private OclRelation evaluateCoercion(
         CoercionExpression expression

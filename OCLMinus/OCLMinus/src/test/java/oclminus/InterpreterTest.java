@@ -1152,4 +1152,135 @@ void rejectsComparisonOfBooleans() {
                 engine.evaluate("1 as Set")
         );
         }
+
+@Test
+        void mergeWithSetRemovesDuplicates() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SET
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(1)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void mergeWithBagPreservesDuplicates() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.BAG
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(1)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(1)
+                        )
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void mergeWithOrderedSetRemovesDuplicates() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.ORDERED_SET
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(1)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void mergeWithSequencePreservesDuplicates() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SEQUENCE
+                        ),
+                        BinaryOperator.MERGE,
+                        new IntegerLiteral(1)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(1)
+                        )
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void evaluatesSetMergeThroughEngine() {
+        OclMinusEngine engine =
+                new OclMinusEngine();
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                engine.evaluate(
+                        "1 as Set ⊔ 1"
+                )
+        );
+        }
+
+@Test
+        void evaluatesBagMergeThroughEngine() {
+        OclMinusEngine engine =
+                new OclMinusEngine();
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(1)
+                        )
+                ),
+                engine.evaluate(
+                        "1 as Bag ⊔ 1"
+                )
+        );
+        }
 }

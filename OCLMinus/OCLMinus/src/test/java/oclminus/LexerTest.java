@@ -205,4 +205,19 @@ class LexerTest {
 
         assertEquals(TokenType.EOF, tokens.get(2).type());
         }
+
+@Test
+        void tokenizesNoExpression() {
+        Lexer lexer = new Lexer("no Person");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.NO, tokens.get(0).type());
+        assertEquals("no", tokens.get(0).lexeme());
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(1).type());
+        assertEquals("Person", tokens.get(1).lexeme());
+
+        assertEquals(TokenType.EOF, tokens.get(2).type());
+        }
 }

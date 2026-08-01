@@ -6,6 +6,7 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.NoExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.runtime.Environment;
 import oclminus.runtime.Interpreter;
@@ -662,6 +663,42 @@ void rejectsComparisonOfBooleans() {
                 interpreter.evaluate(
                         new AllInstancesExpression("Person")
                 )
+        );
+        }
+
+@Test
+        void evaluatesNoExpressionAsEmptyRelation() {
+        Interpreter interpreter = new Interpreter();
+
+        OclValue result = interpreter.evaluate(
+                new NoExpression("Person")
+        );
+
+        assertEquals(
+                new OclRelation(List.of()),
+                result
+        );
+        }
+
+@Test
+        void evaluatesNoIntegerAsEmptyRelation() {
+        Interpreter interpreter = new Interpreter();
+
+        assertEquals(
+                new OclRelation(List.of()),
+                interpreter.evaluate(
+                        new NoExpression("Integer")
+                )
+        );
+        }
+
+@Test
+        void evaluatesNoExpressionThroughEngine() {
+        OclMinusEngine engine = new OclMinusEngine();
+
+        assertEquals(
+                new OclRelation(List.of()),
+                engine.evaluate("no Person")
         );
         }
 }

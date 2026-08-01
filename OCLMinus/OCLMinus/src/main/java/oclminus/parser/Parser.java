@@ -13,6 +13,7 @@ import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
 import oclminus.ast.AllInstancesExpression;
 import java.util.List;
+import oclminus.ast.NoExpression;
 
 public final class Parser {
 
@@ -301,6 +302,17 @@ public final class Parser {
 
             return new AllInstancesExpression(
                     classNameToken.lexeme()
+            );
+        }
+
+        if (match(TokenType.NO)) {
+            Token typeNameToken = consume(
+                    TokenType.IDENTIFIER,
+                    "Nach 'no' wurde ein Typname erwartet."
+            );
+
+            return new NoExpression(
+                    typeNameToken.lexeme()
             );
         }
 

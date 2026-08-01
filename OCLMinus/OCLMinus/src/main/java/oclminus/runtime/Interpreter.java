@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
+import oclminus.ast.NoExpression;
 
 public final class Interpreter {
 
@@ -97,6 +98,10 @@ public Interpreter(
 
         if (expression instanceof BinaryExpression binaryExpression) {
             return evaluateBinaryExpression(binaryExpression);
+        }
+
+        if (expression instanceof NoExpression) {
+                return new OclRelation(List.of());
         }
 
         throw new IllegalStateException(

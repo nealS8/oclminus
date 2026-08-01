@@ -6,6 +6,7 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.NoExpression;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
@@ -426,6 +427,30 @@ class ParserTest {
                         "age"
                 ),
                 expression
+        );
+        }
+
+@Test
+        void parsesNoExpression() {
+        Lexer lexer = new Lexer("no Person");
+        Parser parser = new Parser(lexer.tokenize());
+
+        Expression expression = parser.parse();
+
+        assertEquals(
+                new NoExpression("Person"),
+                expression
+        );
+        }
+
+@Test
+        void rejectsNoWithoutTypeName() {
+        Lexer lexer = new Lexer("no");
+        Parser parser = new Parser(lexer.tokenize());
+
+        assertThrows(
+                ParseException.class,
+                parser::parse
         );
         }
 }

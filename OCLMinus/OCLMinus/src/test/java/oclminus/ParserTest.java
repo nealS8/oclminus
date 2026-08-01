@@ -512,4 +512,38 @@ class ParserTest {
                 expression
         );
         }
+
+@Test
+        void parsesMergeExpression() {
+        Expression expression =
+                parse("left ⊔ right");
+
+        assertEquals(
+                new BinaryExpression(
+                        new VariableExpression("left"),
+                        BinaryOperator.MERGE,
+                        new VariableExpression("right")
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesMergeLeftAssociatively() {
+        Expression expression =
+                parse("a ⊔ b ⊔ c");
+
+        assertEquals(
+                new BinaryExpression(
+                        new BinaryExpression(
+                                new VariableExpression("a"),
+                                BinaryOperator.MERGE,
+                                new VariableExpression("b")
+                        ),
+                        BinaryOperator.MERGE,
+                        new VariableExpression("c")
+                ),
+                expression
+        );
+        }
 }

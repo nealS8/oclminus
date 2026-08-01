@@ -849,4 +849,185 @@ void rejectsComparisonOfBooleans() {
                 engine.evaluate("value↑↓")
         );
         }
+
+@Test
+        void evaluatesMergeExpression() {
+        OclRelation left =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        OclRelation right =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(3),
+                                new OclInteger(4)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define("left", left);
+        environment.define("right", right);
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("left"),
+                        BinaryOperator.MERGE,
+                        new VariableExpression("right")
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3),
+                                new OclInteger(4)
+                        )
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void emptyRelationIsNeutralElementForMerge() {
+        OclRelation value =
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                );
+
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "empty",
+                new OclRelation(List.of())
+        );
+
+        environment.define("value", value);
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                value,
+                interpreter.evaluate(
+                        new BinaryExpression(
+                                new VariableExpression("empty"),
+                                BinaryOperator.MERGE,
+                                new VariableExpression("value")
+                        )
+                )
+        );
+
+        assertEquals(
+                value,
+                interpreter.evaluate(
+                        new BinaryExpression(
+                                new VariableExpression("value"),
+                                BinaryOperator.MERGE,
+                                new VariableExpression("empty")
+                        )
+                )
+        );
+        }
+
+@Test
+        void mergePreservesDuplicates() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "left",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
+
+        environment.define(
+                "right",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                ),
+                interpreter.evaluate(
+                        new BinaryExpression(
+                                new VariableExpression("left"),
+                                BinaryOperator.MERGE,
+                                new VariableExpression("right")
+                        )
+                )
+        );
+        }
+
+@Test
+        void evaluatesMergeThroughEngine() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "left",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
+
+        environment.define(
+                "right",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(3),
+                                new OclInteger(4)
+                        )
+                )
+        );
+
+        OclMinusEngine engine =
+                new OclMinusEngine(environment);
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3),
+                                new OclInteger(4)
+                        )
+                ),
+                engine.evaluate("left ⊔ right")
+        );
+        }
 }

@@ -21,6 +21,7 @@ public enum TokenType {
     NO,
     MINUS,
     SLASH,
+    MERGE,
 
     AND,
     OR,

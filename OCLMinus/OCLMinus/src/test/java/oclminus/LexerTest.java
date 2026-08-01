@@ -264,4 +264,55 @@ class LexerTest {
         assertEquals(TokenType.LOWER, tokens.get(4).type());
         assertEquals(TokenType.EOF, tokens.get(5).type());
         }
+
+@Test
+        void tokenizesMergeOperator() {
+        Lexer lexer = new Lexer("left ⊔ right");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(
+                TokenType.IDENTIFIER,
+                tokens.get(0).type()
+        );
+        assertEquals(
+                "left",
+                tokens.get(0).lexeme()
+        );
+
+        assertEquals(
+                TokenType.MERGE,
+                tokens.get(1).type()
+        );
+        assertEquals(
+                "⊔",
+                tokens.get(1).lexeme()
+        );
+
+        assertEquals(
+                TokenType.IDENTIFIER,
+                tokens.get(2).type()
+        );
+        assertEquals(
+                "right",
+                tokens.get(2).lexeme()
+        );
+
+        assertEquals(
+                TokenType.EOF,
+                tokens.get(3).type()
+        );
+        }
+
+@Test
+        void tokenizesMergeWithoutWhitespace() {
+        Lexer lexer = new Lexer("left⊔right");
+
+        List<Token> tokens = lexer.tokenize();
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals(TokenType.MERGE, tokens.get(1).type());
+        assertEquals(TokenType.IDENTIFIER, tokens.get(2).type());
+        assertEquals(TokenType.EOF, tokens.get(3).type());
+        }
 }

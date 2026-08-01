@@ -9,6 +9,7 @@ public enum BinaryOperator {
 
     EQUAL,
     NOT_EQUAL,
+    MERGE,
 
     LESS_THAN,
     LESS_THAN_OR_EQUAL,

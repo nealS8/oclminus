@@ -66,11 +66,10 @@ public final class Parser {
         }
 
     private Expression parseImplies() {
-        Expression expression = parseOr();
+        Expression expression = parseMerge();
 
         while (match(TokenType.IMPLIES)) {
-
-            Expression right = parseOr();
+            Expression right = parseMerge();
 
             expression = new BinaryExpression(
                     expression,
@@ -405,4 +404,20 @@ public final class Parser {
     private Token previous() {
         return tokens.get(current - 1);
     }
+
+private Expression parseMerge() {
+    Expression expression = parseOr();
+
+    while (match(TokenType.MERGE)) {
+        Expression right = parseOr();
+
+        expression = new BinaryExpression(
+                expression,
+                BinaryOperator.MERGE,
+                right
+        );
+    }
+
+    return expression;
+}
 }

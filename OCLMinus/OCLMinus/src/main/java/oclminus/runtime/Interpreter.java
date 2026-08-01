@@ -168,6 +168,9 @@ public Interpreter(
 
             case IMPLIES ->
                     implies(leftValue, rightValue);
+
+            case MERGE ->
+                    merge(leftValue, rightValue);
         };
     }
 
@@ -774,4 +777,28 @@ public Interpreter(
                         List.of(value)
                 );
         }
+
+private OclRelation merge(OclValue leftValue, OclValue rightValue) {
+    if (!(leftValue instanceof OclRelation leftRelation)) {
+        throw new IllegalStateException(
+                "Merge erwartet links eine Relation."
+        );
+    }
+
+    if (!(rightValue instanceof OclRelation rightRelation)) {
+        throw new IllegalStateException(
+                "Merge erwartet rechts eine Relation."
+        );
+    }
+
+    List<OclValue> result = new ArrayList<>(
+            leftRelation.elements()
+    );
+
+    result.addAll(
+            rightRelation.elements()
+    );
+
+    return new OclRelation(result);
+}
 }

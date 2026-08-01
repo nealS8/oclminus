@@ -7,6 +7,9 @@ import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
+import oclminus.type.CType;
+import oclminus.type.TypeEnvironment;
+import oclminus.type.PrimitiveType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -389,6 +392,133 @@ class OclMinusEngineTest {
                         )
                 ),
                 engine.evaluate("all Person.age")
+        );
+        }
+
+@Test
+        void evaluatesMergeWithTypedVariables() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "left",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
+
+        environment.define(
+                "right",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "left",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        typeEnvironment.define(
+                "right",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        OclMinusEngine engine =
+                new OclMinusEngine(
+                        environment,
+                        new ObjectStore(),
+                        typeEnvironment
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                ),
+                engine.evaluate(
+                        "left as Seq ⊔ right"
+                )
+        );
+        }
+
+@Test
+        void evaluatesSetMergeWithTypedVariables() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "left",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
+
+        environment.define(
+                "right",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "left",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        typeEnvironment.define(
+                "right",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        OclMinusEngine engine =
+                new OclMinusEngine(
+                        environment,
+                        new ObjectStore(),
+                        typeEnvironment
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                ),
+                engine.evaluate(
+                        "left as Set ⊔ right"
+                )
         );
         }
 }

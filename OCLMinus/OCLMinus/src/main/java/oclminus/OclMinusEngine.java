@@ -11,40 +11,63 @@ import oclminus.runtime.Environment;
 import oclminus.runtime.Interpreter;
 import oclminus.runtime.ObjectStore;
 import oclminus.runtime.OclValue;
-
+import oclminus.type.TypeEnvironment;
+import oclminus.type.TypeChecker;
 public final class OclMinusEngine {
 
     private final Environment environment;
     private final ObjectStore objectStore;
+    private final TypeEnvironment typeEnvironment;
 
     public OclMinusEngine() {
     this(
             new Environment(),
-            new ObjectStore()
+            new ObjectStore(),
+            new TypeEnvironment()
     );
-    }
+}
 
-    public OclMinusEngine(Environment environment) {
-        this(
-                environment,
-                new ObjectStore()
-        );
-    }
+public OclMinusEngine(
+        Environment environment
+) {
+    this(
+            environment,
+            new ObjectStore(),
+            new TypeEnvironment()
+    );
+}
 
-    public OclMinusEngine(
-            Environment environment,
-            ObjectStore objectStore
-    ) {
-        this.environment = Objects.requireNonNull(
-                environment,
-                "Environment darf nicht null sein."
-        );
+public OclMinusEngine(
+        Environment environment,
+        ObjectStore objectStore
+) {
+    this(
+            environment,
+            objectStore,
+            new TypeEnvironment()
+    );
+}
 
-        this.objectStore = Objects.requireNonNull(
-                objectStore,
-                "ObjectStore darf nicht null sein."
-        );
-    }
+public OclMinusEngine(
+        Environment environment,
+        ObjectStore objectStore,
+        TypeEnvironment typeEnvironment
+) {
+    this.environment = Objects.requireNonNull(
+            environment,
+            "Environment darf nicht null sein."
+    );
+
+    this.objectStore = Objects.requireNonNull(
+            objectStore,
+            "ObjectStore darf nicht null sein."
+    );
+
+    this.typeEnvironment = Objects.requireNonNull(
+            typeEnvironment,
+            "TypeEnvironment darf nicht null sein."
+    );
+}
 
     public OclValue evaluate(String source) {
         Lexer lexer = new Lexer(source);
@@ -53,12 +76,18 @@ public final class OclMinusEngine {
         Parser parser = new Parser(tokens);
         Expression expression = parser.parse();
 
+        TypeChecker typeChecker =
+                new TypeChecker(typeEnvironment);
+
+        typeChecker.check(expression);
+
         Interpreter interpreter =
-        new Interpreter(
-                environment,
-                objectStore
-        );
+                new Interpreter(
+                        environment,
+                        objectStore,
+                        typeChecker
+                );
 
         return interpreter.evaluate(expression);
-    }
+        }
 }

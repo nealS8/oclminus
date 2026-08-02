@@ -94,4 +94,19 @@ final class CTypeTest {
                 )
         );
     }
+
+    @Test
+        void createsNullableVersion() {
+        CType singleton =
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                singleton.nullable()
+        );
+        }
 }

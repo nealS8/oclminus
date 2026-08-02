@@ -80,4 +80,79 @@ final class TypeEnvironmentTest {
                 )
         );
     }
+
+@Test
+        void childTypeEnvironmentCanAccessParentType() {
+        TypeEnvironment parent =
+                new TypeEnvironment();
+
+        CType type =
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                );
+
+        parent.define("value", type);
+
+        TypeEnvironment child =
+                parent.createChild();
+
+        assertEquals(
+                type,
+                child.lookup("value")
+        );
+        }
+
+@Test
+        void childTypeEnvironmentShadowsParentType() {
+        TypeEnvironment parent =
+                new TypeEnvironment();
+
+        CType parentType =
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                );
+
+        CType childType =
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                );
+
+        parent.define("x", parentType);
+
+        TypeEnvironment child =
+                parent.createChild();
+
+        child.define("x", childType);
+
+        assertEquals(
+                childType,
+                child.lookup("x")
+        );
+
+        assertEquals(
+                parentType,
+                parent.lookup("x")
+        );
+        }
+
+@Test
+        void childTypeIsNotVisibleInParent() {
+        TypeEnvironment parent =
+                new TypeEnvironment();
+
+        TypeEnvironment child =
+                parent.createChild();
+
+        child.define(
+                "x",
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> parent.lookup("x")
+        );
+        }
 }

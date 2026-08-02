@@ -10,6 +10,7 @@ import oclminus.ast.BinaryExpression;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.IterationExpression;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
@@ -785,6 +786,182 @@ final class TypeCheckerTest {
                                 "age"
                         )
                 )
+        );
+        }
+
+@Test
+        void determinesIterationTypeForIntegerSum() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new BinaryExpression(
+                                new VariableExpression("acc"),
+                                BinaryOperator.PLUS,
+                                new VariableExpression("x")
+                        )
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void iteratorVariableHasSingletonMemberType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.setOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new NoExpression("int"),
+                        new VariableExpression("x")
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void accumulatorVariableHasNullableInitialType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new VariableExpression("acc")
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void iterationRejectsIncompatibleBodyType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new BooleanLiteral(true)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void iterationVariablesShadowOuterVariables() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        environment.define(
+                "x",
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new NoExpression("int"),
+                        new VariableExpression("x")
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                environment.lookup("x")
         );
         }
 }

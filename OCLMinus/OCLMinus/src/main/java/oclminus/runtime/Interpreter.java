@@ -21,6 +21,7 @@ import oclminus.ast.NoExpression;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.type.TypeChecker;
+import oclminus.ast.IterationExpression;
 
 public final class Interpreter {
 
@@ -135,6 +136,10 @@ public Interpreter(
 
         if (expression instanceof CoercionExpression coercionExpression) {
                 return evaluateCoercion(coercionExpression);
+        }
+
+        if (expression instanceof IterationExpression iterationExpression) {
+                 return evaluateIteration(iterationExpression);
         }
 
         throw new IllegalStateException(
@@ -889,4 +894,51 @@ private OclRelation removeDuplicates(
 
         return new OclRelation(uniqueElements);
         }
+
+private OclValue evaluateIteration(
+        IterationExpression expression
+        ) {
+        OclValue sourceValue =
+                evaluate(expression.source());
+
+        if (!(sourceValue instanceof OclRelation sourceRelation)) {
+                throw new IllegalStateException(
+                        "Iteration erwartet eine Relation als Source."
+                );
+        }
+
+        OclValue accumulatorValue =
+                evaluate(expression.initialValue());
+
+        for (OclValue element : sourceRelation.elements()) {
+                Environment localEnvironment =
+                        environment.createChild();
+
+                localEnvironment.define(
+                        expression.iteratorVariable(),
+                        new OclRelation(
+                                List.of(element)
+                        )
+                );
+
+                localEnvironment.define(
+                        expression.accumulatorVariable(),
+                        accumulatorValue
+                );
+
+                Interpreter localInterpreter =
+                        new Interpreter(
+                                localEnvironment,
+                                objectStore,
+                                typeChecker
+                        );
+
+                accumulatorValue =
+                        localInterpreter.evaluate(
+                                expression.body()
+                        );
+        }
+
+        return accumulatorValue;
+}
 }

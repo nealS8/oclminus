@@ -15,6 +15,7 @@ import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.PropertyAccessExpression;
+import oclminus.ast.IterationExpression;
 
 public final class TypeChecker {
 
@@ -144,6 +145,13 @@ public TypeChecker(
                         return determinePropertyAccessType(
                                 propertyAccessExpression
                         );
+        }
+
+        if (expression
+                instanceof IterationExpression iterationExpression) {
+                        return determineIterationType(
+                                iterationExpression
+                );
         }
 
         throw new TypeCheckException(
@@ -699,5 +707,110 @@ private Boolean combineOrderedness(
         }
 
         return targetOrdered || propertyOrdered;
+        }
+
+private CType determineIterationType(
+        IterationExpression expression
+        ) {
+        CType sourceType =
+                determineType(expression.source());
+
+        CType initialType =
+                determineType(expression.initialValue());
+
+        CType iteratorType =
+                CType.singletonOf(
+                        sourceType.memberType()
+                );
+
+        CType accumulatorType =
+                initialType.nullable();
+
+        TypeEnvironment localEnvironment =
+                environment.createChild();
+
+        localEnvironment.define(
+                expression.iteratorVariable(),
+                iteratorType
+        );
+
+        localEnvironment.define(
+                expression.accumulatorVariable(),
+                accumulatorType
+        );
+
+        TypeChecker localChecker =
+                new TypeChecker(
+                        localEnvironment,
+                        modelTypeContext
+                );
+
+        CType bodyType =
+                localChecker.determineType(
+                        expression.body()
+                );
+
+        if (!isSubtypeCompatible(
+                bodyType,
+                accumulatorType
+        )) {
+                throw new TypeCheckException(
+                        "Der Typ des Iterationsrumpfs "
+                                + bodyType
+                                + " ist nicht mit dem Akkumulatortyp "
+                                + accumulatorType
+                                + " kompatibel."
+                );
+        }
+
+        return bodyType;
+        }
+
+private boolean isSubtypeCompatible(
+        CType candidate,
+        CType expected
+        ) {
+        if (!memberTypesCompatible(
+                candidate.memberType(),
+                expected.memberType()
+        )) {
+                return false;
+        }
+
+        if (candidate.lowerBound()
+                < expected.lowerBound()) {
+                return false;
+        }
+
+        if (!upperBoundFits(
+                candidate.upperBound(),
+                expected.upperBound()
+        )) {
+                return false;
+        }
+
+        if (candidate.isCollectionKind()
+                && expected.isCollectionKind()) {
+                return candidate.collectionKind()
+                        == expected.collectionKind();
+        }
+
+        return candidate.isCollectionKind()
+                == expected.isCollectionKind();
+        }
+
+private boolean upperBoundFits(
+        Integer candidate,
+        Integer expected
+        ) {
+        if (expected == null) {
+                return true;
+        }
+
+        if (candidate == null) {
+                return false;
+        }
+
+        return candidate <= expected;
         }
 }

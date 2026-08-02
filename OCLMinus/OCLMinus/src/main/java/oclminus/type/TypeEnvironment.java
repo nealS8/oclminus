@@ -6,21 +6,79 @@ import java.util.Objects;
 
 public final class TypeEnvironment {
 
+    private final TypeEnvironment parent;
     private final Map<String, CType> types =
             new HashMap<>();
+
+    public TypeEnvironment() {
+        this(null);
+    }
+
+    private TypeEnvironment(
+            TypeEnvironment parent
+    ) {
+        this.parent = parent;
+    }
+
+    public TypeEnvironment createChild() {
+        return new TypeEnvironment(this);
+    }
 
     public void define(
             String name,
             CType type
     ) {
-        Objects.requireNonNull(
-                name,
-                "Variablenname darf nicht null sein."
-        );
+        validateName(name);
 
         Objects.requireNonNull(
                 type,
                 "CType darf nicht null sein."
+        );
+
+        types.put(name, type);
+    }
+
+    public CType lookup(String name) {
+        validateName(name);
+
+        CType type = types.get(name);
+
+        if (type != null) {
+            return type;
+        }
+
+        if (parent != null) {
+            return parent.lookup(name);
+        }
+
+        throw new IllegalStateException(
+                "Für die Variable '"
+                        + name
+                        + "' ist kein CType definiert."
+        );
+    }
+
+    public boolean containsLocal(String name) {
+        validateName(name);
+
+        return types.containsKey(name);
+    }
+
+    public boolean contains(String name) {
+        validateName(name);
+
+        if (types.containsKey(name)) {
+            return true;
+        }
+
+        return parent != null
+                && parent.contains(name);
+    }
+
+    private void validateName(String name) {
+        Objects.requireNonNull(
+                name,
+                "Variablenname darf nicht null sein."
         );
 
         if (name.isBlank()) {
@@ -28,35 +86,5 @@ public final class TypeEnvironment {
                     "Variablenname darf nicht leer sein."
             );
         }
-
-        types.put(name, type);
-    }
-
-    public CType lookup(String name) {
-        Objects.requireNonNull(
-                name,
-                "Variablenname darf nicht null sein."
-        );
-
-        CType type = types.get(name);
-
-        if (type == null) {
-            throw new IllegalStateException(
-                    "Für die Variable '"
-                            + name
-                            + "' ist kein CType definiert."
-            );
-        }
-
-        return type;
-    }
-
-    public boolean contains(String name) {
-        Objects.requireNonNull(
-                name,
-                "Variablenname darf nicht null sein."
-        );
-
-        return types.containsKey(name);
     }
 }

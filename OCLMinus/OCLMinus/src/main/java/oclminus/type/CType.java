@@ -155,4 +155,14 @@ public record CType(
                 kind.isOrdered()
         );
     }
+
+    public CType nullable() {
+        return new CType(
+                memberType,
+                0,
+                upperBound,
+                unique,
+                ordered
+        );
+        }
 }

@@ -7,6 +7,7 @@ import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.IterationExpression;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
@@ -19,8 +20,12 @@ import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
+import oclminus.type.CType;
 import oclminus.type.CollectionKind;
-
+import oclminus.type.ModelTypeContext;
+import oclminus.type.TypeChecker;
+import oclminus.type.TypeEnvironment;
+import oclminus.type.PrimitiveType;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
@@ -1280,6 +1285,220 @@ void rejectsComparisonOfBooleans() {
                 ),
                 engine.evaluate(
                         "1 as Bag ⊔ 1"
+                )
+        );
+        }
+
+@Test
+        void evaluatesIterationAsIntegerSum() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker typeChecker =
+                new TypeChecker(typeEnvironment);
+
+        Interpreter interpreter =
+                new Interpreter(
+                        environment,
+                        new ObjectStore(),
+                        typeChecker
+                );
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new BinaryExpression(
+                                new VariableExpression("acc"),
+                                BinaryOperator.PLUS,
+                                new VariableExpression("x")
+                        )
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(6))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void iterationOverEmptyRelationReturnsInitialValue() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(List.of())
+        );
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(
+                        environment,
+                        new ObjectStore(),
+                        new TypeChecker(typeEnvironment)
+                );
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(10),
+                        new BinaryExpression(
+                                new VariableExpression("acc"),
+                                BinaryOperator.PLUS,
+                                new VariableExpression("x")
+                        )
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(10))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void iterationShadowsOuterRuntimeVariable() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                )
+        );
+
+        OclRelation outerX =
+                new OclRelation(
+                        List.of(new OclInteger(99))
+                );
+
+        environment.define("x", outerX);
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        typeEnvironment.define(
+                "x",
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(
+                        environment,
+                        new ObjectStore(),
+                        new TypeChecker(typeEnvironment)
+                );
+
+        Expression expression =
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new VariableExpression("x")
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                interpreter.evaluate(expression)
+        );
+
+        assertEquals(
+                outerX,
+                environment.lookup("x")
+        );
+        }
+
+@Test
+        void evaluatesIterationThroughEngine() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "values",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2),
+                                new OclInteger(3)
+                        )
+                )
+        );
+
+        TypeEnvironment typeEnvironment =
+                new TypeEnvironment();
+
+        typeEnvironment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        OclMinusEngine engine =
+                new OclMinusEngine(
+                        environment,
+                        new ObjectStore(),
+                        typeEnvironment,
+                        new ModelTypeContext()
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(6))
+                ),
+                engine.evaluate(
+                        "values ▷ [x | acc ◁ 0 | acc + x]"
                 )
         );
         }

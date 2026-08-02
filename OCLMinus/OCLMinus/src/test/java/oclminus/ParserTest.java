@@ -7,6 +7,7 @@ import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
+import oclminus.ast.IterationExpression;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
@@ -612,6 +613,88 @@ class ParserTest {
                         CollectionKind.SET
                 ),
                 parse("person.age↑ as Set")
+        );
+        }
+
+@Test
+        void parsesIterationExpression() {
+        Expression expression =
+                parse(
+                        "values ▷ "
+                                + "[x | acc ◁ no int | acc]"
+                );
+
+        assertEquals(
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new NoExpression("int"),
+                        new VariableExpression("acc")
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesIterationWithAdditionBody() {
+        Expression expression =
+                parse(
+                        "values ▷ "
+                                + "[x | acc ◁ 0 | acc + x]"
+                );
+
+        assertEquals(
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new BinaryExpression(
+                                new VariableExpression("acc"),
+                                BinaryOperator.PLUS,
+                                new VariableExpression("x")
+                        )
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesIterationAfterPropertyAccess() {
+        Expression expression =
+                parse(
+                        "all Person.age "
+                                + "▷ [x | acc ◁ 0 | acc + x]"
+                );
+
+        assertEquals(
+                new IterationExpression(
+                        new PropertyAccessExpression(
+                                new AllInstancesExpression("Person"),
+                                "age"
+                        ),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new BinaryExpression(
+                                new VariableExpression("acc"),
+                                BinaryOperator.PLUS,
+                                new VariableExpression("x")
+                        )
+                ),
+                expression
+        );
+        }
+
+@Test
+        void rejectsIterationWithoutClosingBracket() {
+        assertThrows(
+                ParseException.class,
+                () -> parse(
+                        "values ▷ "
+                                + "[x | acc ◁ 0 | acc + x"
+                )
         );
         }
 }

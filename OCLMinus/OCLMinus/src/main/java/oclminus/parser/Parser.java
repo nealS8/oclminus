@@ -18,6 +18,7 @@ import java.util.List;
 import oclminus.ast.NoExpression;
 import oclminus.ast.CoercionExpression;
 import oclminus.type.CollectionKind;
+import oclminus.ast.IterationExpression;
 
 public final class Parser {
 
@@ -64,7 +65,7 @@ public final class Parser {
     }
 
     private Expression parseExpression() {
-            return parseImplies();
+            return parseIteration();
         }
 
     private Expression parseImplies() {
@@ -81,6 +82,77 @@ public final class Parser {
         }
 
         return expression;
+    }
+
+    private Expression parseIteration() {
+        Expression expression =
+                parseImplies();
+
+        while (match(TokenType.ITERATE)) {
+            expression =
+                    finishIteration(expression);
+        }
+
+        return expression;
+    }
+
+    private Expression finishIteration(
+        Expression source
+    ) {
+        consume(
+                TokenType.LEFT_BRACKET,
+                "Nach '▷' wurde '[' erwartet."
+        );
+
+        Token iteratorToken = consume(
+                TokenType.IDENTIFIER,
+                "Nach '[' wurde der Name "
+                        + "der Iteratorvariable erwartet."
+        );
+
+        consume(
+                TokenType.PIPE,
+                "Nach der Iteratorvariable "
+                        + "wurde '|' erwartet."
+        );
+
+        Token accumulatorToken = consume(
+                TokenType.IDENTIFIER,
+                "Nach '|' wurde der Name "
+                        + "der Akkumulatorvariable erwartet."
+        );
+
+        consume(
+                TokenType.ACCUMULATOR_INIT,
+                "Nach der Akkumulatorvariable "
+                        + "wurde '◁' erwartet."
+        );
+
+        Expression initialValue =
+                parseExpression();
+
+        consume(
+                TokenType.PIPE,
+                "Nach dem Initialwert "
+                        + "wurde '|' erwartet."
+        );
+
+        Expression body =
+                parseExpression();
+
+        consume(
+                TokenType.RIGHT_BRACKET,
+                "Nach dem Iterationsrumpf "
+                        + "wurde ']' erwartet."
+        );
+
+        return new IterationExpression(
+                source,
+                iteratorToken.lexeme(),
+                accumulatorToken.lexeme(),
+                initialValue,
+                body
+        );
     }
 
     private Expression parseOr() {

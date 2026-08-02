@@ -478,4 +478,43 @@ void tokenizesIterationSyntax() {
         assertEquals(TokenType.RIGHT_BRACKET, tokens.get(10).type());
         assertEquals(TokenType.EOF, tokens.get(11).type());
         }
+
+@Test
+        void tokenizesConditionalWithoutWhitespace() {
+        Lexer lexer =
+                new Lexer("true?1:2");
+
+        List<Token> tokens =
+                lexer.tokenize();
+
+        assertEquals(
+                TokenType.TRUE,
+                tokens.get(0).type()
+        );
+
+        assertEquals(
+                TokenType.QUESTION_MARK,
+                tokens.get(1).type()
+        );
+
+        assertEquals(
+                TokenType.INTEGER,
+                tokens.get(2).type()
+        );
+
+        assertEquals(
+                TokenType.COLON,
+                tokens.get(3).type()
+        );
+
+        assertEquals(
+                TokenType.INTEGER,
+                tokens.get(4).type()
+        );
+
+        assertEquals(
+                TokenType.EOF,
+                tokens.get(5).type()
+        );
+        }
 }

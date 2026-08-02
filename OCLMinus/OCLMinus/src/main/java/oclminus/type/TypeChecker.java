@@ -16,6 +16,7 @@ import oclminus.ast.BinaryOperator;
 import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.IterationExpression;
+import oclminus.ast.ConditionalExpression;
 
 public final class TypeChecker {
 
@@ -152,6 +153,13 @@ public TypeChecker(
                         return determineIterationType(
                                 iterationExpression
                 );
+        }
+
+        if (expression
+                instanceof ConditionalExpression conditionalExpression) {
+                        return determineConditionalType(
+                                conditionalExpression
+                        );
         }
 
         throw new TypeCheckException(
@@ -812,5 +820,146 @@ private boolean upperBoundFits(
         }
 
         return candidate <= expected;
+        }
+
+private CType determineConditionalType(
+        ConditionalExpression expression
+        ) {
+        CType conditionType =
+                determineType(expression.condition());
+
+        requireBooleanScalarType(
+                conditionType,
+                "Bedingungs-"
+        );
+
+        CType thenType =
+                determineType(expression.thenBranch());
+
+        CType elseType =
+                determineType(expression.elseBranch());
+
+        CType resultType =
+                leastCommonType(
+                        thenType,
+                        elseType
+                );
+
+        if (conditionType.lowerBound() == 0) {
+                return resultType.nullable();
+        }
+
+        return resultType;
+        }
+
+private CType leastCommonType(
+        CType left,
+        CType right
+        ) {
+        if (!memberTypesCompatible(
+                left.memberType(),
+                right.memberType()
+        )) {
+                throw new TypeCheckException(
+                        "Die Zweige des bedingten Ausdrucks "
+                                + "besitzen inkompatible Membertypen: "
+                                + left.memberType()
+                                + " und "
+                                + right.memberType()
+                                + "."
+                );
+        }
+
+        if (left.isCollectionKind()
+                != right.isCollectionKind()) {
+                throw new TypeCheckException(
+                        "Die Zweige des bedingten Ausdrucks "
+                                + "müssen beide Collection-Typen "
+                                + "oder beide Singleton-/Option-Typen sein."
+                );
+        }
+
+        Boolean unique = null;
+        Boolean ordered = null;
+
+        if (left.isCollectionKind()) {
+                if (left.collectionKind()
+                        != right.collectionKind()) {
+                throw new TypeCheckException(
+                        "Die Collection-Kinds der beiden Zweige "
+                                + "sind nicht kompatibel: "
+                                + left.collectionKind()
+                                + " und "
+                                + right.collectionKind()
+                                + "."
+                );
+                }
+
+                unique = left.unique();
+                ordered = left.ordered();
+        }
+
+        int lowerBound =
+                Math.min(
+                        left.lowerBound(),
+                        right.lowerBound()
+                );
+
+        Integer upperBound =
+                maximumUpperBound(
+                        left.upperBound(),
+                        right.upperBound()
+                );
+
+        MemberType memberType =
+                commonMemberType(
+                        left.memberType(),
+                        right.memberType()
+                );
+
+        return new CType(
+                memberType,
+                lowerBound,
+                upperBound,
+                unique,
+                ordered
+        );
+        }
+
+private Integer maximumUpperBound(
+        Integer left,
+        Integer right
+        ) {
+        if (left == null || right == null) {
+                return null;
+        }
+
+        return Math.max(left, right);
+        }
+
+private MemberType commonMemberType(
+        MemberType left,
+        MemberType right
+        ) {
+        if (left.equals(right)) {
+                return left;
+        }
+
+        if (left == PrimitiveType.ANY) {
+                return left;
+        }
+
+        if (right == PrimitiveType.ANY) {
+                return right;
+        }
+
+        throw new TypeCheckException(
+                "Es konnte kein gemeinsamer Membertyp "
+                        + "für "
+                        + left
+                        + " und "
+                        + right
+                        + " bestimmt werden."
+        );
         }
 }

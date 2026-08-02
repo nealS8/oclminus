@@ -92,6 +92,12 @@ public final class Lexer {
             case '|' ->
                 addSingleCharacterToken(TokenType.PIPE);
 
+            case '?' ->
+                addSingleCharacterToken(TokenType.QUESTION_MARK);
+
+            case ':' ->
+                addSingleCharacterToken(TokenType.COLON);
+
             default -> {
                 if (Character.isWhitespace(currentCharacter)) {
                     skipWhitespace();
@@ -311,4 +317,5 @@ public final class Lexer {
     private boolean isAtEnd() {
         return current >= source.length();
     }
+
 }

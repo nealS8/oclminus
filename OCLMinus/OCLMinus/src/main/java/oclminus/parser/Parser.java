@@ -19,6 +19,7 @@ import oclminus.ast.NoExpression;
 import oclminus.ast.CoercionExpression;
 import oclminus.type.CollectionKind;
 import oclminus.ast.IterationExpression;
+import oclminus.ast.ConditionalExpression;
 
 public final class Parser {
 
@@ -65,7 +66,7 @@ public final class Parser {
     }
 
     private Expression parseExpression() {
-            return parseIteration();
+            return parseConditional();
         }
 
     private Expression parseImplies() {
@@ -82,6 +83,32 @@ public final class Parser {
         }
 
         return expression;
+    }
+
+    private Expression parseConditional() {
+        Expression condition =
+                parseIteration();
+
+        if (!match(TokenType.QUESTION_MARK)) {
+            return condition;
+        }
+
+        Expression thenBranch =
+                parseExpression();
+
+        consume(
+                TokenType.COLON,
+                "Nach dem Then-Ausdruck wurde ':' erwartet."
+        );
+
+        Expression elseBranch =
+                parseConditional();
+
+        return new ConditionalExpression(
+                condition,
+                thenBranch,
+                elseBranch
+        );
     }
 
     private Expression parseIteration() {

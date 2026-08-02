@@ -9,6 +9,7 @@ import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
+import oclminus.ast.ConditionalExpression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.IterationExpression;
 import oclminus.ast.LiftExpression;
@@ -962,6 +963,148 @@ final class TypeCheckerTest {
                         PrimitiveType.BOOLEAN
                 ),
                 environment.lookup("x")
+        );
+        }
+
+@Test
+        void determinesConditionalType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void optionalConditionProducesNullableResultType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "condition",
+                CType.optionOf(
+                        PrimitiveType.BOOLEAN
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new ConditionalExpression(
+                        new VariableExpression("condition"),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void conditionalCombinesSingletonAndOptionBranches() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "optionalValue",
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new VariableExpression("optionalValue")
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void conditionalRejectsIntegerCondition() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2),
+                        new IntegerLiteral(3)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void conditionalRejectsIncompatibleBranches() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new BooleanLiteral(false)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void conditionalAcceptsMatchingCollectionKinds() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SET
+                        ),
+                        new CoercionExpression(
+                                new IntegerLiteral(2),
+                                CollectionKind.SET
+                        )
+                );
+
+        assertEquals(
+                CType.setOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
         );
         }
 }

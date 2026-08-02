@@ -5,6 +5,7 @@ import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
+import oclminus.ast.ConditionalExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.IterationExpression;
@@ -695,6 +696,113 @@ class ParserTest {
                         "values ▷ "
                                 + "[x | acc ◁ 0 | acc + x"
                 )
+        );
+        }
+
+@Test
+        void parsesConditionalExpression() {
+        Expression expression =
+                parse("true ? 1 : 2");
+
+        assertEquals(
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesConditionalRightAssociatively() {
+        Expression expression =
+                parse(
+                        "true ? 1 : false ? 2 : 3"
+                );
+
+        assertEquals(
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new ConditionalExpression(
+                                new BooleanLiteral(false),
+                                new IntegerLiteral(2),
+                                new IntegerLiteral(3)
+                        )
+                ),
+                expression
+        );
+        }
+
+@Test
+        void parsesConditionalWithArithmeticBranches() {
+        Expression expression =
+                parse(
+                        "1 < 2 ? 3 + 4 : 5 * 6"
+                );
+
+        assertEquals(
+                new ConditionalExpression(
+                        new BinaryExpression(
+                                new IntegerLiteral(1),
+                                BinaryOperator.LESS_THAN,
+                                new IntegerLiteral(2)
+                        ),
+                        new BinaryExpression(
+                                new IntegerLiteral(3),
+                                BinaryOperator.PLUS,
+                                new IntegerLiteral(4)
+                        ),
+                        new BinaryExpression(
+                                new IntegerLiteral(5),
+                                BinaryOperator.MULTIPLY,
+                                new IntegerLiteral(6)
+                        )
+                ),
+                expression
+        );
+        }
+
+@Test
+        void rejectsConditionalWithoutColon() {
+        assertThrows(
+                ParseException.class,
+                () -> parse(
+                        "true ? 1 2"
+                )
+        );
+        }
+
+@Test
+        void parsesConditionalInsideIterationBody() {
+        Expression expression =
+                parse(
+                        "values ▷ [x | acc ◁ 0 | "
+                                + "x > 0 ? acc + x : acc]"
+                );
+
+        assertEquals(
+                new IterationExpression(
+                        new VariableExpression("values"),
+                        "x",
+                        "acc",
+                        new IntegerLiteral(0),
+                        new ConditionalExpression(
+                                new BinaryExpression(
+                                        new VariableExpression("x"),
+                                        BinaryOperator.GREATER_THAN,
+                                        new IntegerLiteral(0)
+                                ),
+                                new BinaryExpression(
+                                        new VariableExpression("acc"),
+                                        BinaryOperator.PLUS,
+                                        new VariableExpression("x")
+                                ),
+                                new VariableExpression("acc")
+                        )
+                ),
+                expression
         );
         }
 }

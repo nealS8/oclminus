@@ -44,5 +44,8 @@ public enum TokenType {
     RIGHT_BRACKET,
     PIPE,
 
+    QUESTION_MARK,
+    COLON,
+
     EOF
 }

@@ -22,6 +22,7 @@ import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.type.TypeChecker;
 import oclminus.ast.IterationExpression;
+import oclminus.ast.ConditionalExpression;
 
 public final class Interpreter {
 
@@ -140,6 +141,13 @@ public Interpreter(
 
         if (expression instanceof IterationExpression iterationExpression) {
                  return evaluateIteration(iterationExpression);
+        }
+
+        if (expression
+                instanceof ConditionalExpression conditionalExpression) {
+                        return evaluateConditional(
+                                conditionalExpression
+                );
         }
 
         throw new IllegalStateException(
@@ -941,4 +949,70 @@ private OclValue evaluateIteration(
 
         return accumulatorValue;
 }
+
+private OclRelation evaluateConditional(
+        ConditionalExpression expression
+        ) {
+        OclValue conditionValue =
+                evaluate(expression.condition());
+
+        if (!(conditionValue
+                instanceof OclRelation conditionRelation)) {
+                throw new IllegalStateException(
+                        "Die Bedingung muss eine Relation sein."
+                );
+        }
+
+        if (conditionRelation.elements().isEmpty()) {
+                return new OclRelation(List.of());
+        }
+
+        if (conditionRelation.elements().size() != 1) {
+                throw new IllegalStateException(
+                        "Die Bedingung muss eine Singleton- "
+                                + "oder leere Relation sein."
+                );
+        }
+
+        OclValue element =
+                conditionRelation.elements().get(0);
+
+        if (!(element instanceof OclBoolean booleanValue)) {
+                throw new IllegalStateException(
+                        "Die Bedingung muss einen Boolean enthalten."
+                );
+        }
+
+        if (booleanValue.value()) {
+                OclValue thenValue =
+                        evaluate(expression.thenBranch());
+
+                return requireRelation(
+                        thenValue,
+                        "Then-Zweig"
+                );
+        }
+
+        OclValue elseValue =
+                evaluate(expression.elseBranch());
+
+        return requireRelation(
+                elseValue,
+                "Else-Zweig"
+        );
+        }
+
+private OclRelation requireRelation(
+        OclValue value,
+        String description
+        ) {
+        if (!(value instanceof OclRelation relation)) {
+                throw new IllegalStateException(
+                        description
+                                + " muss eine Relation ergeben."
+                );
+        }
+
+        return relation;
+        }
 }

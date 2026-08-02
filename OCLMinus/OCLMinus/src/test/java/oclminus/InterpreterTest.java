@@ -5,6 +5,7 @@ import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
+import oclminus.ast.ConditionalExpression;
 import oclminus.ast.Expression;
 import oclminus.ast.IntegerLiteral;
 import oclminus.ast.IterationExpression;
@@ -1499,6 +1500,141 @@ void rejectsComparisonOfBooleans() {
                 ),
                 engine.evaluate(
                         "values ▷ [x | acc ◁ 0 | acc + x]"
+                )
+        );
+        }
+
+@Test
+        void conditionalEvaluatesThenBranchForTrue() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void conditionalEvaluatesElseBranchForFalse() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(false),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(2))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void conditionalWithEmptyConditionReturnsEmptyRelation() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "condition",
+                new OclRelation(List.of())
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        Expression expression =
+                new ConditionalExpression(
+                        new VariableExpression("condition"),
+                        new IntegerLiteral(1),
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                new OclRelation(List.of()),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void conditionalDoesNotEvaluateUnselectedBranch() {
+        Interpreter interpreter =
+                new Interpreter();
+
+        Expression expression =
+                new ConditionalExpression(
+                        new BooleanLiteral(true),
+                        new IntegerLiteral(1),
+                        new BinaryExpression(
+                                new IntegerLiteral(1),
+                                BinaryOperator.DIVIDE,
+                                new IntegerLiteral(0)
+                        )
+                );
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(1))
+                ),
+                interpreter.evaluate(expression)
+        );
+        }
+
+@Test
+        void conditionalRejectsNonSingletonCondition() {
+        Environment environment =
+                new Environment();
+
+        environment.define(
+                "condition",
+                new OclRelation(
+                        List.of(
+                                new OclBoolean(true),
+                                new OclBoolean(false)
+                        )
+                )
+        );
+
+        Interpreter interpreter =
+                new Interpreter(environment);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> interpreter.evaluate(
+                        new ConditionalExpression(
+                                new VariableExpression("condition"),
+                                new IntegerLiteral(1),
+                                new IntegerLiteral(2)
+                        )
+                )
+        );
+        }
+
+@Test
+        void evaluatesConditionalThroughEngine() {
+        OclMinusEngine engine =
+                new OclMinusEngine();
+
+        assertEquals(
+                new OclRelation(
+                        List.of(new OclInteger(7))
+                ),
+                engine.evaluate(
+                        "1 < 2 ? 3 + 4 : 5 * 6"
                 )
         );
         }

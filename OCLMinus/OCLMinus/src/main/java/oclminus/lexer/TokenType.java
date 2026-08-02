@@ -37,5 +37,12 @@ public enum TokenType {
     LIFT,
     LOWER,
 
+    ITERATE,
+    ACCUMULATOR_INIT,
+
+    LEFT_BRACKET,
+    RIGHT_BRACKET,
+    PIPE,
+
     EOF
 }

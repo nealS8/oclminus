@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
+import oclminus.ast.AllInstancesExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BooleanLiteral;
 import oclminus.ast.CoercionExpression;
@@ -12,6 +13,7 @@ import oclminus.ast.IntegerLiteral;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
+import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.type.*;
@@ -658,6 +660,129 @@ final class TypeCheckerTest {
                         new UnaryExpression(
                                 UnaryOperator.NEGATE,
                                 new BooleanLiteral(true)
+                        )
+                )
+        );
+        }
+
+@Test
+        void determinesAllInstancesType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        assertEquals(
+                CType.setOf(
+                        new ClassType("Person")
+                ),
+                checker.determineType(
+                        new AllInstancesExpression("Person")
+                )
+        );
+        }
+
+@Test
+        void determinesPropertyAccessTypeAfterAllInstances() {
+        ModelTypeContext model =
+                new ModelTypeContext();
+
+        model.defineProperty(
+                "Person",
+                "age",
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(
+                        new TypeEnvironment(),
+                        model
+                );
+
+        Expression expression =
+                new PropertyAccessExpression(
+                        new AllInstancesExpression("Person"),
+                        "age"
+                );
+
+        assertEquals(
+                new CType(
+                        PrimitiveType.INTEGER,
+                        0,
+                        null,
+                        false,
+                        false
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void determinesOptionalPropertyAccessType() {
+        ModelTypeContext model =
+                new ModelTypeContext();
+
+        model.defineProperty(
+                "Person",
+                "manager",
+                CType.optionOf(
+                        new ClassType("Person")
+                )
+        );
+
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "person",
+                CType.singletonOf(
+                        new ClassType("Person")
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(
+                        environment,
+                        model
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        new ClassType("Person")
+                ),
+                checker.determineType(
+                        new PropertyAccessExpression(
+                                new VariableExpression("person"),
+                                "manager"
+                        )
+                )
+        );
+        }
+
+@Test
+        void rejectsUnknownProperty() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "person",
+                CType.singletonOf(
+                        new ClassType("Person")
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(
+                        environment,
+                        new ModelTypeContext()
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(
+                        new PropertyAccessExpression(
+                                new VariableExpression("person"),
+                                "age"
                         )
                 )
         );

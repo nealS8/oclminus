@@ -77,6 +77,21 @@ public final class Lexer {
             case '⊔' ->
                 addSingleCharacterToken(TokenType.MERGE);
 
+            case '▷' ->
+                addSingleCharacterToken(TokenType.ITERATE);
+
+            case '◁' ->
+                addSingleCharacterToken(TokenType.ACCUMULATOR_INIT);
+
+            case '[' ->
+                addSingleCharacterToken(TokenType.LEFT_BRACKET);
+
+            case ']' ->
+                addSingleCharacterToken(TokenType.RIGHT_BRACKET);
+
+            case '|' ->
+                addSingleCharacterToken(TokenType.PIPE);
+
             default -> {
                 if (Character.isWhitespace(currentCharacter)) {
                     skipWhitespace();

@@ -380,4 +380,102 @@ class LexerTest {
                 tokens.get(4).type()
         );
         }
+
+@Test
+void tokenizesIterationSyntax() {
+    Lexer lexer =
+            new Lexer(
+                    "values ▷ [x | a ◁ no int | a]"
+            );
+
+    List<Token> tokens =
+            lexer.tokenize();
+
+    assertEquals(
+            TokenType.IDENTIFIER,
+            tokens.get(0).type()
+    );
+
+    assertEquals(
+            TokenType.ITERATE,
+            tokens.get(1).type()
+    );
+
+    assertEquals(
+            TokenType.LEFT_BRACKET,
+            tokens.get(2).type()
+    );
+
+    assertEquals(
+            TokenType.IDENTIFIER,
+            tokens.get(3).type()
+    );
+
+    assertEquals(
+            TokenType.PIPE,
+            tokens.get(4).type()
+    );
+
+    assertEquals(
+            TokenType.IDENTIFIER,
+            tokens.get(5).type()
+    );
+
+    assertEquals(
+            TokenType.ACCUMULATOR_INIT,
+            tokens.get(6).type()
+    );
+
+    assertEquals(
+            TokenType.NO,
+            tokens.get(7).type()
+    );
+
+    assertEquals(
+            TokenType.IDENTIFIER,
+            tokens.get(8).type()
+    );
+
+    assertEquals(
+            TokenType.PIPE,
+            tokens.get(9).type()
+    );
+
+    assertEquals(
+            TokenType.IDENTIFIER,
+            tokens.get(10).type()
+    );
+
+    assertEquals(
+            TokenType.RIGHT_BRACKET,
+            tokens.get(11).type()
+    );
+
+    assertEquals(
+            TokenType.EOF,
+            tokens.get(12).type()
+    );
+}
+
+@Test
+        void tokenizesCompactIterationSymbols() {
+        Lexer lexer =
+                new Lexer("v▷[x|a◁1|a]");
+
+        List<Token> tokens =
+                lexer.tokenize();
+
+        assertEquals(TokenType.IDENTIFIER, tokens.get(0).type());
+        assertEquals(TokenType.ITERATE, tokens.get(1).type());
+        assertEquals(TokenType.LEFT_BRACKET, tokens.get(2).type());
+        assertEquals(TokenType.IDENTIFIER, tokens.get(3).type());
+        assertEquals(TokenType.PIPE, tokens.get(4).type());
+        assertEquals(TokenType.IDENTIFIER, tokens.get(5).type());
+        assertEquals(TokenType.ACCUMULATOR_INIT, tokens.get(6).type());
+        assertEquals(TokenType.INTEGER, tokens.get(7).type());
+        assertEquals(TokenType.PIPE, tokens.get(8).type());
+        assertEquals(TokenType.IDENTIFIER, tokens.get(9).type());
+        assertEquals(TokenType.RIGHT_BRACKET, tokens.get(10).type());
+        assertEquals(TokenType.EOF, tokens.get(11).type());
+        }
 }

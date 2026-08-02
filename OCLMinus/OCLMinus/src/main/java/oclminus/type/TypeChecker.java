@@ -13,21 +13,44 @@ import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
+import oclminus.ast.AllInstancesExpression;
+import oclminus.ast.PropertyAccessExpression;
 
 public final class TypeChecker {
 
     private final TypeEnvironment environment;
+    private final ModelTypeContext modelTypeContext;
 
     public TypeChecker() {
-        this(new TypeEnvironment());
-    }
+    this(
+            new TypeEnvironment(),
+            new ModelTypeContext()
+    );
+}
 
-    public TypeChecker(TypeEnvironment environment) {
-        this.environment = Objects.requireNonNull(
-                environment,
-                "TypeEnvironment darf nicht null sein."
-        );
-    }
+public TypeChecker(
+        TypeEnvironment environment
+) {
+    this(
+            environment,
+            new ModelTypeContext()
+    );
+}
+
+public TypeChecker(
+        TypeEnvironment environment,
+        ModelTypeContext modelTypeContext
+) {
+    this.environment = Objects.requireNonNull(
+            environment,
+            "TypeEnvironment darf nicht null sein."
+    );
+
+    this.modelTypeContext = Objects.requireNonNull(
+            modelTypeContext,
+            "ModelTypeContext darf nicht null sein."
+    );
+}
 
     public TypedExpression check(Expression expression) {
         Objects.requireNonNull(
@@ -107,6 +130,20 @@ public final class TypeChecker {
 
         if (expression instanceof UnaryExpression unaryExpression) {
             return determineUnaryType(unaryExpression);
+        }
+
+        if (expression
+            instanceof AllInstancesExpression allInstancesExpression) {
+                return determineAllInstancesType(
+                        allInstancesExpression
+                );
+        }
+
+        if (expression
+                instanceof PropertyAccessExpression propertyAccessExpression) {
+                        return determinePropertyAccessType(
+                                propertyAccessExpression
+                        );
         }
 
         throw new TypeCheckException(
@@ -547,5 +584,120 @@ private CType determineUnaryType(
                 );
                 }
         };
+        }
+
+private CType determineAllInstancesType(
+        AllInstancesExpression expression
+        ) {
+        return CType.setOf(
+                new ClassType(
+                        expression.className()
+                )
+        );
+        }
+
+private CType determinePropertyAccessType(
+        PropertyAccessExpression expression
+        ) {
+        CType targetType =
+                determineType(expression.target());
+
+        if (!(targetType.memberType()
+                instanceof ClassType classType)) {
+                throw new TypeCheckException(
+                        "Property Access erwartet einen Klassentyp "
+                                + "als Membertyp, erhalten wurde: "
+                                + targetType.memberType()
+                                + "."
+                );
+        }
+
+        CType propertyType =
+                modelTypeContext.lookupProperty(
+                        classType.className(),
+                        expression.propertyName()
+                );
+
+        return combineNavigationTypes(
+                targetType,
+                propertyType
+        );
+        }
+
+private CType combineNavigationTypes(
+        CType targetType,
+        CType propertyType
+) {
+    int lowerBound;
+
+    try {
+        lowerBound = Math.multiplyExact(
+                targetType.lowerBound(),
+                propertyType.lowerBound()
+        );
+    } catch (ArithmeticException exception) {
+        throw new TypeCheckException(
+                "Untere Multiplizitätsgrenze ist zu groß."
+        );
+    }
+
+    Integer upperBound =
+            multiplyUpperBounds(
+                    targetType.upperBound(),
+                    propertyType.upperBound()
+            );
+
+    if (upperBound != null && upperBound <= 1) {
+        return new CType(
+                propertyType.memberType(),
+                lowerBound,
+                upperBound,
+                null,
+                null
+        );
+    }
+
+    Boolean ordered =
+            combineOrderedness(
+                    targetType,
+                    propertyType
+            );
+
+    return new CType(
+            propertyType.memberType(),
+            lowerBound,
+            upperBound,
+            false,
+            ordered
+    );
+}
+
+private Boolean combineOrderedness(
+        CType targetType,
+        CType propertyType
+        ) {
+        boolean targetOrdered =
+                Boolean.TRUE.equals(
+                        targetType.ordered()
+                );
+
+        boolean propertyOrdered =
+                Boolean.TRUE.equals(
+                        propertyType.ordered()
+                );
+
+        if (targetType.isSingleton()
+                && propertyType.isSingleton()) {
+                return null;
+        }
+
+        if ((targetType.isSingleton()
+                || targetType.isOption())
+                && (propertyType.isSingleton()
+                || propertyType.isOption())) {
+                return null;
+        }
+
+        return targetOrdered || propertyOrdered;
         }
 }

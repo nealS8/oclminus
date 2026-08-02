@@ -9,6 +9,7 @@ import oclminus.ast.IntegerLiteral;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
+import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.ast.BinaryExpression;
 import oclminus.ast.BinaryOperator;
@@ -104,6 +105,10 @@ public final class TypeChecker {
             return determineBinaryType(binaryExpression);
         }
 
+        if (expression instanceof UnaryExpression unaryExpression) {
+            return determineUnaryType(unaryExpression);
+        }
+
         throw new TypeCheckException(
                 "Für den Ausdruckstyp '"
                         + expression.getClass().getSimpleName()
@@ -166,25 +171,34 @@ public final class TypeChecker {
 
     private CType determineBinaryType(
         BinaryExpression expression
-        ) {
-        return switch (expression.operator()) {
-                case MERGE ->
-                        determineMergeType(expression);
+) {
+    return switch (expression.operator()) {
+        case MERGE ->
+                determineMergeType(expression);
 
-                case PLUS,
-                MINUS,
-                MULTIPLY,
-                DIVIDE ->
-                        determineIntegerBinaryType(expression);
+        case PLUS,
+             MINUS,
+             MULTIPLY,
+             DIVIDE ->
+                determineIntegerBinaryType(expression);
 
-                default ->
-                        throw new TypeCheckException(
-                                "Für den binären Operator '"
-                                        + expression.operator()
-                                        + "' ist noch keine Typregel implementiert."
-                        );
-        };
-        }
+        case LESS_THAN,
+             LESS_THAN_OR_EQUAL,
+             GREATER_THAN,
+             GREATER_THAN_OR_EQUAL ->
+                determineIntegerComparisonType(expression);
+
+        case EQUAL,
+             NOT_EQUAL ->
+                determineEqualityType(expression);
+
+        case AND,
+             OR,
+             XOR,
+             IMPLIES ->
+                determineBooleanBinaryType(expression);
+    };
+}
 
     private CType determineMergeType(
         BinaryExpression expression
@@ -341,5 +355,197 @@ private Integer multiplyUpperBounds(
                 left,
                 right
         );
+        }
+
+private CType determineIntegerComparisonType(
+        BinaryExpression expression
+        ) {
+        CType leftType =
+                determineType(expression.left());
+
+        CType rightType =
+                determineType(expression.right());
+
+        requireIntegerScalarType(
+                leftType,
+                "linken"
+        );
+
+        requireIntegerScalarType(
+                rightType,
+                "rechten"
+        );
+
+        int lowerBound =
+                leftType.lowerBound()
+                        * rightType.lowerBound();
+
+        Integer upperBound =
+                multiplyUpperBounds(
+                        leftType.upperBound(),
+                        rightType.upperBound()
+                );
+
+        return new CType(
+                PrimitiveType.BOOLEAN,
+                lowerBound,
+                upperBound,
+                null,
+                null
+        );
+        }
+
+private CType determineEqualityType(
+        BinaryExpression expression
+        ) {
+        CType leftType =
+                determineType(expression.left());
+
+        CType rightType =
+                determineType(expression.right());
+
+        if (!typesComparable(
+                leftType,
+                rightType
+        )) {
+                throw new TypeCheckException(
+                        "Die Operandentypen von "
+                                + expression.operator()
+                                + " sind nicht vergleichbar: "
+                                + leftType
+                                + " und "
+                                + rightType
+                                + "."
+                );
+        }
+
+        return CType.singletonOf(
+                PrimitiveType.BOOLEAN
+        );
+        }
+
+private boolean typesComparable(
+        CType left,
+        CType right
+        ) {
+        if (!memberTypesCompatible(
+                left.memberType(),
+                right.memberType()
+        )) {
+                return false;
+        }
+
+        if (left.isCollectionKind()
+                && right.isCollectionKind()) {
+                return left.collectionKind()
+                        == right.collectionKind();
+        }
+
+        if (left.isCollectionKind()
+                != right.isCollectionKind()) {
+                return false;
+        }
+
+        return true;
+        }
+
+private CType determineBooleanBinaryType(
+        BinaryExpression expression
+        ) {
+        CType leftType =
+                determineType(expression.left());
+
+        CType rightType =
+                determineType(expression.right());
+
+        requireBooleanScalarType(
+                leftType,
+                "linken"
+        );
+
+        requireBooleanScalarType(
+                rightType,
+                "rechten"
+        );
+
+        int lowerBound =
+                leftType.lowerBound()
+                        * rightType.lowerBound();
+
+        Integer upperBound =
+                multiplyUpperBounds(
+                        leftType.upperBound(),
+                        rightType.upperBound()
+                );
+
+        return new CType(
+                PrimitiveType.BOOLEAN,
+                lowerBound,
+                upperBound,
+                null,
+                null
+        );
+        }
+
+private void requireBooleanScalarType(
+        CType type,
+        String operandDescription
+        ) {
+        if (type.memberType() != PrimitiveType.BOOLEAN) {
+                throw new TypeCheckException(
+                        "Der "
+                                + operandDescription
+                                + " Operand muss den Membertyp bool besitzen."
+                );
+        }
+
+        if (!type.isSingleton()
+                && !type.isOption()) {
+                throw new TypeCheckException(
+                        "Der "
+                                + operandDescription
+                                + " Operand muss ein Singleton- "
+                                + "oder Option-Typ sein."
+                );
+        }
+        }
+
+private CType determineUnaryType(
+        UnaryExpression expression
+        ) {
+        CType operandType =
+                determineType(expression.operand());
+
+        return switch (expression.operator()) {
+                case NOT -> {
+                requireBooleanScalarType(
+                        operandType,
+                        "unäre"
+                );
+
+                yield new CType(
+                        PrimitiveType.BOOLEAN,
+                        operandType.lowerBound(),
+                        operandType.upperBound(),
+                        null,
+                        null
+                );
+                }
+
+                case NEGATE -> {
+                requireIntegerScalarType(
+                        operandType,
+                        "unäre"
+                );
+
+                yield new CType(
+                        PrimitiveType.INTEGER,
+                        operandType.lowerBound(),
+                        operandType.upperBound(),
+                        null,
+                        null
+                );
+                }
+        };
         }
 }

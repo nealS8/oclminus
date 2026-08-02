@@ -12,10 +12,12 @@ import oclminus.ast.IntegerLiteral;
 import oclminus.ast.LiftExpression;
 import oclminus.ast.LowerExpression;
 import oclminus.ast.NoExpression;
+import oclminus.ast.UnaryExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.type.*;
 import oclminus.ast.Expression;
 import oclminus.ast.BinaryOperator;
+import oclminus.ast.UnaryOperator;
 
 final class TypeCheckerTest {
 
@@ -360,6 +362,304 @@ final class TypeCheckerTest {
         assertThrows(
                 TypeCheckException.class,
                 () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void determinesLessThanType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.LESS_THAN,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void comparisonWithOptionalIntegerProducesOptionalBoolean() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "optionalValue",
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("optionalValue"),
+                        BinaryOperator.LESS_THAN,
+                        new IntegerLiteral(10)
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void lessThanRejectsBooleanOperand() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new BooleanLiteral(true),
+                        BinaryOperator.LESS_THAN,
+                        new IntegerLiteral(2)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void equalityProducesSingletonBooleanType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.EQUAL,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void equalityAllowsOptionAndSingletonOfSameMemberType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "optionalValue",
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("optionalValue"),
+                        BinaryOperator.EQUAL,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void equalityRejectsDifferentCollectionKinds() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.SET
+                        ),
+                        BinaryOperator.EQUAL,
+                        new CoercionExpression(
+                                new IntegerLiteral(1),
+                                CollectionKind.BAG
+                        )
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void equalityRejectsIntegerAndBoolean() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.EQUAL,
+                        new BooleanLiteral(true)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void determinesAndType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new BooleanLiteral(true),
+                        BinaryOperator.AND,
+                        new BooleanLiteral(false)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void logicalOperationWithOptionalBooleanProducesOption() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "optionalFlag",
+                CType.optionOf(
+                        PrimitiveType.BOOLEAN
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("optionalFlag"),
+                        BinaryOperator.OR,
+                        new BooleanLiteral(true)
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void logicalOperationRejectsIntegerOperand() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.AND,
+                        new BooleanLiteral(true)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void determinesNotType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new UnaryExpression(
+                        UnaryOperator.NOT,
+                        new BooleanLiteral(true)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.BOOLEAN
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void determinesUnaryMinusType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new UnaryExpression(
+                        UnaryOperator.NEGATE,
+                        new IntegerLiteral(5)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void notRejectsInteger() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(
+                        new UnaryExpression(
+                                UnaryOperator.NOT,
+                                new IntegerLiteral(1)
+                        )
+                )
+        );
+        }
+
+@Test
+        void unaryMinusRejectsBoolean() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(
+                        new UnaryExpression(
+                                UnaryOperator.NEGATE,
+                                new BooleanLiteral(true)
+                        )
+                )
         );
         }
 }

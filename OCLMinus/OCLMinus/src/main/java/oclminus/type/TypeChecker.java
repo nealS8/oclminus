@@ -166,17 +166,25 @@ public final class TypeChecker {
 
     private CType determineBinaryType(
         BinaryExpression expression
-    ) {
-        if (expression.operator() == BinaryOperator.MERGE) {
-            return determineMergeType(expression);
-        }
+        ) {
+        return switch (expression.operator()) {
+                case MERGE ->
+                        determineMergeType(expression);
 
-        throw new TypeCheckException(
-                "Für den binären Operator '"
-                        + expression.operator()
-                        + "' ist noch keine Typregel implementiert."
-        );
-    }
+                case PLUS,
+                MINUS,
+                MULTIPLY,
+                DIVIDE ->
+                        determineIntegerBinaryType(expression);
+
+                default ->
+                        throw new TypeCheckException(
+                                "Für den binären Operator '"
+                                        + expression.operator()
+                                        + "' ist noch keine Typregel implementiert."
+                        );
+        };
+        }
 
     private CType determineMergeType(
         BinaryExpression expression
@@ -259,4 +267,79 @@ public final class TypeChecker {
 
         return Math.addExact(left, right);
     }
+
+private CType determineIntegerBinaryType(
+        BinaryExpression expression
+        ) {
+        CType leftType =
+                determineType(expression.left());
+
+        CType rightType =
+                determineType(expression.right());
+
+        requireIntegerScalarType(
+                leftType,
+                "linken"
+        );
+
+        requireIntegerScalarType(
+                rightType,
+                "rechten"
+        );
+
+        int lowerBound =
+                leftType.lowerBound()
+                        * rightType.lowerBound();
+
+        Integer upperBound =
+                multiplyUpperBounds(
+                        leftType.upperBound(),
+                        rightType.upperBound()
+                );
+
+        return new CType(
+                PrimitiveType.INTEGER,
+                lowerBound,
+                upperBound,
+                null,
+                null
+        );
+        }
+
+private void requireIntegerScalarType(
+        CType type,
+        String operandDescription
+        ) {
+        if (type.memberType() != PrimitiveType.INTEGER) {
+                throw new TypeCheckException(
+                        "Der "
+                                + operandDescription
+                                + " Operand muss den Membertyp int besitzen."
+                );
+        }
+
+        if (!type.isSingleton()
+                && !type.isOption()) {
+                throw new TypeCheckException(
+                        "Der "
+                                + operandDescription
+                                + " Operand muss ein Singleton- "
+                                + "oder Option-Typ sein."
+                );
+        }
+        }
+
+private Integer multiplyUpperBounds(
+        Integer left,
+        Integer right
+        ) {
+        if (left == null || right == null) {
+                return null;
+        }
+
+        return Math.multiplyExact(
+                left,
+                right
+        );
+        }
 }

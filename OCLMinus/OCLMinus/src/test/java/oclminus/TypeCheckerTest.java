@@ -266,4 +266,100 @@ final class TypeCheckerTest {
                 () -> checker.determineType(expression)
         );
     }
+
+@Test
+        void determinesAdditionType() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new IntegerLiteral(1),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.singletonOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void additionWithOptionalOperandProducesOptionType() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "optionalValue",
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("optionalValue"),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(2)
+                );
+
+        assertEquals(
+                CType.optionOf(
+                        PrimitiveType.INTEGER
+                ),
+                checker.determineType(expression)
+        );
+        }
+
+@Test
+        void additionRejectsBooleanOperand() {
+        TypeChecker checker =
+                new TypeChecker();
+
+        Expression expression =
+                new BinaryExpression(
+                        new BooleanLiteral(true),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(2)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
+
+@Test
+        void additionRejectsIntegerCollection() {
+        TypeEnvironment environment =
+                new TypeEnvironment();
+
+        environment.define(
+                "values",
+                CType.sequenceOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        TypeChecker checker =
+                new TypeChecker(environment);
+
+        Expression expression =
+                new BinaryExpression(
+                        new VariableExpression("values"),
+                        BinaryOperator.PLUS,
+                        new IntegerLiteral(2)
+                );
+
+        assertThrows(
+                TypeCheckException.class,
+                () -> checker.determineType(expression)
+        );
+        }
 }

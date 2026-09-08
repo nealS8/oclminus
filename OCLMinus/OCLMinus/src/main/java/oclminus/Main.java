@@ -85,13 +85,24 @@ public class Main {
                 )
         );
 
-        environment.define("set1", new OclRelation(
+        environment.define("sequence1", new OclRelation(
             List.of(new OclInteger(1), new OclInteger(2))
         ));
 
-        environment.define("set2", new OclRelation(
+        environment.define("sequence2", new OclRelation(
             List.of(new OclInteger(2), new OclInteger(1))
         ));
+
+        // Verschachteltes Norm Beispiel
+        OclRelation innerSet1 = new OclRelation(
+            List.of(new OclInteger(1), new OclInteger(2)));
+
+        OclRelation innerSet2 = new OclRelation(
+            List.of(new OclInteger(2), new OclInteger(1)));
+
+        environment.define("outerSet1", new OclRelation(List.of(innerSet1)));
+
+        environment.define("outerSet2", new OclRelation(List.of(innerSet2)));
 
 
         // =====================================================
@@ -120,10 +131,18 @@ public class Main {
                 )
         );
 
-        typeEnvironment.define("set1", CType.setOf(PrimitiveType.INTEGER));
+        typeEnvironment.define("sequence1", CType.sequenceOf(PrimitiveType.INTEGER));
 
-        typeEnvironment.define("set2", CType.setOf(PrimitiveType.INTEGER));
+        typeEnvironment.define("sequence2", CType.sequenceOf(PrimitiveType.INTEGER));
 
+        // Verschachteltes Norm Beispiel
+        CType innerSetType = CType.setOf(PrimitiveType.INTEGER);
+
+        CType outerSetType = CType.setOf(innerSetType);
+
+        typeEnvironment.define("outerSet1", outerSetType);
+
+        typeEnvironment.define("outerSet2", outerSetType);
 
         // =====================================================
         // 5. ModelTypeContext
@@ -191,8 +210,13 @@ public class Main {
         System.out.println("any(x > 10) = " + anyResult2);
 
         // Semantische Gleichheit prüfen
-        OclValue setEquality = engine.evaluate("set1 = set2");
+        OclValue setEquality = engine.evaluate("sequence1 = sequence2");
 
-        System.out.println("set1 = set2: " + setEquality);
+        System.out.println("sequence1 = sequence2: " + setEquality);
+
+        // Verschachteltes Norm Beispiel
+        OclValue nestedSetMerge = engine.evaluate("outerSet1 ⊔ outerSet2");
+
+        System.out.println("Verschachtelter Set-Merge = " + nestedSetMerge);
     }
 }

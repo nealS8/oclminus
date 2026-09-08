@@ -15,7 +15,7 @@ import oclminus.ast.AllInstancesExpression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import oclminus.type.MemberType;
 import oclminus.ast.UnaryExpression;
 import oclminus.ast.UnaryOperator;
 import oclminus.ast.NoExpression;
@@ -141,11 +141,8 @@ public final class Interpreter {
                  return evaluateIteration(iterationExpression);
         }
 
-        if (expression
-                instanceof ConditionalExpression conditionalExpression) {
-                        return evaluateConditional(
-                                conditionalExpression
-                );
+        if (expression instanceof ConditionalExpression conditionalExpression) {
+            return evaluateConditional(conditionalExpression);
         }
 
         throw new IllegalStateException(
@@ -821,7 +818,8 @@ public final class Interpreter {
                         List.of(value)
                 );
         }
-
+    
+    // Bei unique Collections werden semantisch gleiche Elemente nicht erneut hinzugefügt
     private OclRelation merge(BinaryExpression expression, OclValue leftValue, OclValue rightValue) {
         
         if (!(leftValue instanceof OclRelation leftRelation)) {
@@ -847,13 +845,35 @@ public final class Interpreter {
         }
 
         for (OclValue rightElement : rightRelation.elements()) {
-            if (!result.contains(rightElement)) {
-            result.add(rightElement);
+
+            if (!containsSemantically(result, rightElement, leftType.memberType())) {
+                result.add(rightElement);
             }
         }
 
         return new OclRelation(result);
         }
+
+    // Prüft unter Berücksichtigung des Member-CType, ob bereits ein semantisch gleiches Element enthalten ist
+    private boolean containsSemantically(List<OclValue> values, OclValue candidate, MemberType memberType) {
+        
+        for (OclValue value : values) {
+
+            if (value instanceof OclRelation valueRelation
+                && candidate instanceof OclRelation candidateRelation
+                && memberType instanceof CType memberCType) {
+
+                    if (semanticEquals(valueRelation, memberCType, candidateRelation, memberCType)) {
+                        return true;
+                    }
+
+                        } else if (value.equals(candidate)) {
+                            return true;
+                        }
+        }
+
+        return false;
+    }
 
     private OclRelation evaluateCoercion(CoercionExpression expression) {
 

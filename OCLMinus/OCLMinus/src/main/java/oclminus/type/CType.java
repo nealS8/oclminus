@@ -78,20 +78,18 @@ public record CType(
         return CollectionKind.SEQUENCE;
     }
 
-    public static CType singletonOf(
-            MemberType memberType
-    ) {
+    public static CType singletonOf(MemberType memberType) {
         return new CType(
-                memberType,
-                1,
-                1,
-                null,
-                null
+            memberType,
+            1,
+            1,
+            null,
+            null
         );
     }
 
     public static CType optionOf(
-            MemberType memberType
+        MemberType memberType
     ) {
         return new CType(
                 memberType,

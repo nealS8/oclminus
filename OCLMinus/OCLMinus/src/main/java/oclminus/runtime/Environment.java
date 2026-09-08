@@ -22,24 +22,15 @@ public final class Environment {
         return new Environment(this);
     }
 
-    public void define(
-            String name,
-            OclValue value
-    ) {
-        Objects.requireNonNull(
-                name,
-                "Variablenname darf nicht null sein."
-        );
+    // OclValue ist erlaubt, obwohl bei späteren Interpreterpfaden OclRelation vorausgesetzt wird, führt zu Fehlern
+    public void define(String name, OclValue value) { 
+        
+        Objects.requireNonNull(name, "Variablenname darf nicht null sein.");
 
-        Objects.requireNonNull(
-                value,
-                "OclValue darf nicht null sein."
-        );
+        Objects.requireNonNull(value, "OclValue darf nicht null sein.");
 
         if (name.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Variablenname darf nicht leer sein."
-            );
+            throw new IllegalArgumentException("Variablenname darf nicht leer sein.");
         }
 
         values.put(name, value);

@@ -99,15 +99,12 @@ public final class Parser {
 
     private Expression parseMerge() {
         Expression expression = parseOr();
-
+        
+        // while-Schleife macht merge linksassoziativ
         while (match(TokenType.MERGE)) {
             Expression right = parseOr();
 
-            expression = new BinaryExpression(
-                expression,
-                BinaryOperator.MERGE,
-                right
-            );
+            expression = new BinaryExpression(expression, BinaryOperator.MERGE, right);
         }
 
         return expression;
@@ -292,14 +289,11 @@ public final class Parser {
     private Expression parseCoercion() {
         Expression expression = parsePropertyAccess();
 
+        // Wenn TokenType AS ist, wird zum nächsten Token gesprungen und collectionKind ausgewertet
         while (match(TokenType.AS)) {
             CollectionKind collectionKind = parseCollectionKind();
 
-            expression =
-                new CoercionExpression(
-                    expression,
-                    collectionKind
-                );
+            expression = new CoercionExpression(expression, collectionKind);
         }
 
         return expression;
@@ -372,6 +366,7 @@ public final class Parser {
             return new AllInstancesExpression(classNameToken.lexeme());
         }
 
+        // Wenn TokenType gleich NO ist, wird geprüft, ob der nächste Token ein Typname ist
         if (match(TokenType.NO)) {
             Token typeNameToken = consume(
                 TokenType.IDENTIFIER,
@@ -483,6 +478,7 @@ public final class Parser {
 
     // Hilfsmethoden ab hier
 
+    // Wenn die Tokentypen gleich sind, dann wird auf den nächsten Token gezeigt
     private boolean match(TokenType... expectedTypes) {
         for (TokenType expectedType : expectedTypes) {
             if (check(expectedType)) {
@@ -494,10 +490,8 @@ public final class Parser {
         return false;
     }
 
-    private Token consume(
-        TokenType expectedType,
-        String errorMessage
-    ) {
+    private Token consume(TokenType expectedType, String errorMessage) {
+
         if (check(expectedType)) {
             return advance();
         }
@@ -511,6 +505,7 @@ public final class Parser {
         );
     }
 
+    // überprüft aktuellen Typ des Tokens auf Gleichheit mit Bedingung
     private boolean check(TokenType expectedType) {
         return peek().type() == expectedType;
     }

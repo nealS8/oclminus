@@ -24,106 +24,89 @@ public final class TypeChecker {
     private final ModelTypeContext modelTypeContext;
 
     public TypeChecker() {
-    this(
+        this(
             new TypeEnvironment(),
             new ModelTypeContext()
-    );
-}
-
-public TypeChecker(
-        TypeEnvironment environment
-) {
-    this(
-            environment,
-            new ModelTypeContext()
-    );
-}
-
-public TypeChecker(
-        TypeEnvironment environment,
-        ModelTypeContext modelTypeContext
-) {
-    this.environment = Objects.requireNonNull(
-            environment,
-            "TypeEnvironment darf nicht null sein."
-    );
-
-    this.modelTypeContext = Objects.requireNonNull(
-            modelTypeContext,
-            "ModelTypeContext darf nicht null sein."
-    );
-}
-
-    public TypedExpression check(Expression expression) {
-        Objects.requireNonNull(
-                expression,
-                "Expression darf nicht null sein."
-        );
-
-        CType type = determineType(expression);
-
-        return new TypedExpression(
-                expression,
-                type
         );
     }
 
-    public CType determineType(Expression expression) {
-        Objects.requireNonNull(
-                expression,
-                "Expression darf nicht null sein."
+    public TypeChecker(
+        TypeEnvironment environment
+    ) {
+        this(
+            environment,
+            new ModelTypeContext()
+        );
+    }
+
+    public TypeChecker(
+        TypeEnvironment environment,
+        ModelTypeContext modelTypeContext
+    ) {
+        this.environment = Objects.requireNonNull(
+            environment,
+            "TypeEnvironment darf nicht null sein."
         );
 
-        if (expression instanceof IntegerLiteral) {
-            return CType.singletonOf(
-                    PrimitiveType.INTEGER
-            );
+        this.modelTypeContext = Objects.requireNonNull(
+            modelTypeContext,
+            "ModelTypeContext darf nicht null sein."
+        );
+    }
+
+    public TypedExpression check(Expression expression) { // Bekommt Ausdruck vom AST (Parser)
+        Objects.requireNonNull(expression, "Expression darf nicht null sein.");
+
+        CType type = determineType(expression); // Bestimmt den Typ des Ausdrucks
+
+        return new TypedExpression(expression, type);
+    }
+
+    public TypeEnvironment environment() {
+        return environment;
+    }
+
+    public ModelTypeContext modelTypeContext() {
+        return modelTypeContext;
+    }
+
+
+    // Bestimmt anhand des AST-Ausdruckstyps den zugehörigen CType
+    // und wendet dafür die passende Typregel an.
+    public CType determineType(Expression expression) {
+        
+        Objects.requireNonNull(expression, "Expression darf nicht null sein.");
+
+        if (expression instanceof IntegerLiteral) { // Auswertung direkt hier, keine weitere Rekursion
+            return CType.singletonOf(PrimitiveType.INTEGER);
         }
 
-        if (expression instanceof BooleanLiteral) {
-            return CType.singletonOf(
-                    PrimitiveType.BOOLEAN
-            );
+        if (expression instanceof BooleanLiteral) { // Auswertung direkt hier, keine weitere Rekursion
+            return CType.singletonOf(PrimitiveType.BOOLEAN);
         }
 
-        if (expression
-                instanceof VariableExpression variableExpression) {
-            return environment.lookup(
-                    variableExpression.name()
-            );
+        if (expression instanceof VariableExpression variableExpression) { // Der Ctype der Variable wird im TypeEnvironment 
+            return environment.lookup(variableExpression.name());          // nachgeschaut und zurückgegeben
         }
 
-        if (expression
-                instanceof NoExpression noExpression) {
-            return CType.optionOf(
-                    parseMemberType(
-                            noExpression.typeName()
-                    )
-            );
+        if (expression instanceof NoExpression noExpression) { // No(T) hat den optionalen Typ 0..1 des angegebenen Member-Typs
+            return CType.optionOf(parseMemberType(noExpression.typeName()));
         }
 
-        if (expression
-                instanceof LiftExpression liftExpression) {
-            CType operandType =
-                    determineType(
-                            liftExpression.operand()
-                    );
+        if (expression instanceof LiftExpression liftExpression) {
+            
+            // Bestimmt zunächst den Typ des Ausdrucks, auf den lift angewendet wird
+            CType operandType = determineType(liftExpression.operand());
 
             return CType.singletonOf(operandType);
         }
 
-        if (expression
-                instanceof LowerExpression lowerExpression) {
-            return determineLowerType(
-                    lowerExpression
-            );
+        if (expression instanceof LowerExpression lowerExpression) {
+            return determineLowerType(lowerExpression);
         }
 
-        if (expression
-                instanceof CoercionExpression coercionExpression) {
-            return determineCoercionType(
-                    coercionExpression
-            );
+        if (expression instanceof CoercionExpression coercionExpression) {
+            return determineCoercionType(coercionExpression);
         }
 
         if (expression instanceof BinaryExpression binaryExpression) {
@@ -134,52 +117,36 @@ public TypeChecker(
             return determineUnaryType(unaryExpression);
         }
 
-        if (expression
-            instanceof AllInstancesExpression allInstancesExpression) {
-                return determineAllInstancesType(
-                        allInstancesExpression
-                );
+        if (expression instanceof AllInstancesExpression allInstancesExpression) {
+            return determineAllInstancesType(allInstancesExpression);
         }
 
-        if (expression
-                instanceof PropertyAccessExpression propertyAccessExpression) {
-                        return determinePropertyAccessType(
-                                propertyAccessExpression
-                        );
+        if (expression instanceof PropertyAccessExpression propertyAccessExpression) {
+            return determinePropertyAccessType(propertyAccessExpression);
         }
 
-        if (expression
-                instanceof IterationExpression iterationExpression) {
-                        return determineIterationType(
-                                iterationExpression
-                );
+        if (expression instanceof IterationExpression iterationExpression) {
+            return determineIterationType(iterationExpression);
         }
 
-        if (expression
-                instanceof ConditionalExpression conditionalExpression) {
-                        return determineConditionalType(
-                                conditionalExpression
-                        );
+        if (expression instanceof ConditionalExpression conditionalExpression) {
+            return determineConditionalType(conditionalExpression);
         }
 
         throw new TypeCheckException(
-                "Für den Ausdruckstyp '"
-                        + expression.getClass().getSimpleName()
-                        + "' ist noch keine Typregel implementiert."
+            "Für den Ausdruckstyp '"
+            + expression.getClass().getSimpleName()
+            + "' ist noch keine Typregel implementiert."
         );
     }
 
-    private CType determineLowerType(
-            LowerExpression expression
-    ) {
-        CType operandType =
-                determineType(expression.operand());
+    private CType determineLowerType(LowerExpression expression) {
+        
+        CType operandType = determineType(expression.operand());
 
-        if (!(operandType.memberType()
-                instanceof CType innerType)) {
+        if (!(operandType.memberType() instanceof CType innerType)) {
             throw new TypeCheckException(
-                    "Lower erwartet einen CType "
-                            + "als Membertyp."
+                "Lower erwartet einen CType als Membertyp."
             );
         }
 
@@ -192,11 +159,8 @@ public TypeChecker(
         return innerType;
     }
 
-    private CType determineCoercionType(
-            CoercionExpression expression
-    ) {
-        CType operandType =
-                determineType(expression.operand());
+    private CType determineCoercionType(CoercionExpression expression) {
+        CType operandType = determineType(expression.operand());
 
         return CType.collectionOf(
                 operandType.memberType(),
@@ -204,54 +168,50 @@ public TypeChecker(
         );
     }
 
-    private MemberType parseMemberType(
-            String typeName
-    ) {
+    private MemberType parseMemberType(String typeName) {
         return switch (typeName) {
             case "int", "Integer" ->
-                    PrimitiveType.INTEGER;
+                PrimitiveType.INTEGER;
 
             case "bool", "Boolean" ->
-                    PrimitiveType.BOOLEAN;
+                PrimitiveType.BOOLEAN;
 
             case "any", "Any" ->
-                    PrimitiveType.ANY;
+                PrimitiveType.ANY;
 
             default ->
-                    new ClassType(typeName);
+                new ClassType(typeName);
         };
     }
 
-    private CType determineBinaryType(
-        BinaryExpression expression
-) {
-    return switch (expression.operator()) {
-        case MERGE ->
+    private CType determineBinaryType(BinaryExpression expression) {
+        return switch (expression.operator()) {
+            case MERGE ->
                 determineMergeType(expression);
 
-        case PLUS,
-             MINUS,
-             MULTIPLY,
-             DIVIDE ->
-                determineIntegerBinaryType(expression);
+            case PLUS,
+                 MINUS,
+                 MULTIPLY,
+                 DIVIDE ->
+                    determineIntegerBinaryType(expression);
 
-        case LESS_THAN,
-             LESS_THAN_OR_EQUAL,
-             GREATER_THAN,
-             GREATER_THAN_OR_EQUAL ->
-                determineIntegerComparisonType(expression);
+            case LESS_THAN,
+                 LESS_THAN_OR_EQUAL,
+                 GREATER_THAN,
+                 GREATER_THAN_OR_EQUAL ->
+                    determineIntegerComparisonType(expression);
 
-        case EQUAL,
-             NOT_EQUAL ->
-                determineEqualityType(expression);
+            case EQUAL,
+                 NOT_EQUAL ->
+                    determineEqualityType(expression);
 
-        case AND,
-             OR,
-             XOR,
-             IMPLIES ->
-                determineBooleanBinaryType(expression);
-    };
-}
+            case AND,
+                 OR,
+                 XOR,
+                 IMPLIES ->
+                    determineBooleanBinaryType(expression);
+        };
+    }
 
     private CType determineMergeType(
         BinaryExpression expression

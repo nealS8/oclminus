@@ -10,6 +10,7 @@ import oclminus.ast.PropertyAccessExpression;
 import oclminus.ast.VariableExpression;
 import oclminus.type.CType;
 import oclminus.type.TypeChecker;
+import oclminus.type.TypeEnvironment;
 import oclminus.ast.AllInstancesExpression;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,65 +32,62 @@ public final class Interpreter {
     private final TypeChecker typeChecker;
 
     public Interpreter() {
-    this(
+        this(
             new Environment(),
             new ObjectStore(),
             new TypeChecker()
-    );
-}
+        );
+    }
 
-public Interpreter(Environment environment) {
-    this(
+    public Interpreter(Environment environment) {
+        this(
             environment,
             new ObjectStore(),
             new TypeChecker()
-    );
-}
+        );
+    }
 
-public Interpreter(
+    public Interpreter(
         Environment environment,
         ObjectStore objectStore
-) {
-    this(
+    ) {
+        this(
             environment,
             objectStore,
             new TypeChecker()
-    );
-}
+        );
+    }
 
-public Interpreter(
+    public Interpreter(
         Environment environment,
         ObjectStore objectStore,
         TypeChecker typeChecker
-) {
-    this.environment = Objects.requireNonNull(
+    ) {
+        this.environment = Objects.requireNonNull(
             environment,
             "Environment darf nicht null sein."
-    );
+        );
 
-    this.objectStore = Objects.requireNonNull(
+        this.objectStore = Objects.requireNonNull(
             objectStore,
             "ObjectStore darf nicht null sein."
-    );
+        );
 
-    this.typeChecker = Objects.requireNonNull(
+        this.typeChecker = Objects.requireNonNull(
             typeChecker,
             "TypeChecker darf nicht null sein."
-    );
-}
+        );
+    }
 
     public OclValue evaluate(Expression expression) {
+
         if (expression == null) {
-            throw new IllegalArgumentException(
-                    "Expression darf nicht null sein."
-            );
+            throw new IllegalArgumentException("Expression darf nicht null sein.");
         }
 
         if (expression instanceof IntegerLiteral integerLiteral) {
             return new OclRelation(
-                java.util.List.of(
-                    new OclInteger(integerLiteral.value())
-                )
+                java.util.List.of(new OclInteger(integerLiteral.value()))
             );
         }
 
@@ -156,9 +154,8 @@ public Interpreter(
         );
     }
 
-    private OclValue evaluateBinaryExpression(
-        BinaryExpression expression
-    ) {
+    private OclValue evaluateBinaryExpression(BinaryExpression expression) {
+        
         OclValue leftValue = evaluate(expression.left());
         OclValue rightValue = evaluate(expression.right());
 
@@ -207,9 +204,9 @@ public Interpreter(
 
             case MERGE ->
                 merge(
-                        expression,
-                        leftValue,
-                        rightValue
+                    expression,
+                    leftValue,
+                    rightValue
                 );
         };
     }
@@ -266,28 +263,28 @@ public Interpreter(
         );
     }
 
-    private OclValue equal(
-            OclValue leftValue,
-            OclValue rightValue
-    ) {
-        OclValue leftElement =
-                requireSingleElement(
-                        leftValue,
-                        BinaryOperator.EQUAL
-                );
+    private OclValue equal(OclValue leftValue, OclValue rightValue) {
 
-        OclValue rightElement =
-                requireSingleElement(
-                        rightValue,
-                        BinaryOperator.EQUAL
-                );
+        if (!(leftValue instanceof OclRelation leftRelation)
+            || !(rightValue instanceof OclRelation rightRelation)) {
+                throw new IllegalStateException("Gleichheit erwartet Relationen.");
+                }
 
-        boolean result =
-                leftElement.equals(rightElement);
+        boolean result = leftRelation.equals(rightRelation);
 
-        return new OclRelation(
-                List.of(new OclBoolean(result))
-        );
+        return new OclRelation(List.of(new OclBoolean(result)));
+    }
+
+    private OclValue notEqual(OclValue leftValue, OclValue rightValue) {
+
+        if (!(leftValue instanceof OclRelation leftRelation)
+            || !(rightValue instanceof OclRelation rightRelation)) {
+                throw new IllegalStateException("Ungleichheit erwartet Relationen.");
+                }
+
+        boolean result = !leftRelation.equals(rightRelation);
+
+        return new OclRelation(List.of(new OclBoolean(result)));
     }
 
     private OclValue evaluateUnaryExpression(
@@ -386,30 +383,6 @@ public Interpreter(
 
         return new OclRelation(
                 List.of(result)
-        );
-    }
-
-    private OclValue notEqual(
-        OclValue leftValue,
-        OclValue rightValue
-    ) {
-        OclValue leftElement =
-                requireSingleElement(
-                        leftValue,
-                        BinaryOperator.NOT_EQUAL
-                );
-
-        OclValue rightElement =
-                requireSingleElement(
-                        rightValue,
-                        BinaryOperator.NOT_EQUAL
-                );
-
-        boolean result =
-                !leftElement.equals(rightElement);
-
-        return new OclRelation(
-                List.of(new OclBoolean(result))
         );
     }
 
@@ -517,47 +490,32 @@ public Interpreter(
         );
     }
 
-    private OclValue evaluatePropertyAccess(
-        PropertyAccessExpression expression
-        ) {
-        OclValue target =
-                evaluate(expression.target());
+    private OclValue evaluatePropertyAccess(PropertyAccessExpression expression) {
+        OclValue target = evaluate(expression.target());
 
         if (!(target instanceof OclRelation relation)) {
-                throw new IllegalStateException(
-                        "Property Access erwartet eine Relation."
-                );
+            throw new IllegalStateException("Property Access erwartet eine Relation.");
         }
 
-        return accessProperty(
-                relation,
-                expression.propertyName()
-        );
-}
+        return accessProperty(relation, expression.propertyName());
+    }
 
-        private OclRelation accessProperty(
-                OclRelation relation,
-                String propertyName
-        ) {
-        List<OclValue> result =
-                new ArrayList<>();
+    private OclRelation accessProperty(OclRelation relation, String propertyName) {
+        List<OclValue> result = new ArrayList<>();
 
         for (OclValue value : relation.elements()) {
 
-                if (!(value instanceof OclObject object)) {
-                throw new IllegalStateException(
-                        "Property Access kann nur auf Objekten erfolgen."
-                );
-                }
+            if (!(value instanceof OclObject object)) {
+                throw new IllegalStateException("Property Access kann nur auf Objekten erfolgen.");
+            }
 
-                OclRelation property =
-                        object.property(propertyName);
+            OclRelation property = object.property(propertyName);
 
-                result.addAll(property.elements());
+            result.addAll(property.elements());
         }
 
         return new OclRelation(result);
-        }
+    }
 
     private OclBoolean requireSingleBoolean(
         OclValue value,
@@ -818,71 +776,51 @@ public Interpreter(
                 );
         }
 
-private OclRelation merge(
-        BinaryExpression expression,
-        OclValue leftValue,
-        OclValue rightValue
-        ) {
+    private OclRelation merge(BinaryExpression expression, OclValue leftValue, OclValue rightValue) {
+        
         if (!(leftValue instanceof OclRelation leftRelation)) {
-                throw new IllegalStateException(
-                        "Merge erwartet links eine Relation."
-                );
+            throw new IllegalStateException("Merge erwartet links eine Relation.");
         }
 
-        if (!(rightValue instanceof OclRelation rightRelation)) {
-                throw new IllegalStateException(
-                        "Merge erwartet rechts eine Relation."
-                );
+        if (!(rightValue instanceof OclRelation rightRelation)) {throw new IllegalStateException("Merge erwartet rechts eine Relation.");
         }
 
-        CType leftType =
-                typeChecker.determineType(
-                        expression.left()
-                );
+        CType leftType = typeChecker.determineType(expression.left());
 
         if (!leftType.isCollectionKind()) {
-                throw new IllegalStateException(
-                        "Der linke Operand von Merge besitzt "
-                                + "keinen Collection-Kind."
-                );
+            throw new IllegalStateException("Der linke Operand von Merge besitzt keinen Collection-Kind.");
         }
 
-        List<OclValue> result =
-                new ArrayList<>(
-                        leftRelation.elements()
-                );
+        List<OclValue> result = new ArrayList<>(leftRelation.elements());
 
         if (!leftType.collectionKind().isUnique()) {
-                result.addAll(
-                        rightRelation.elements()
-                );
 
-                return new OclRelation(result);
+            result.addAll(rightRelation.elements());
+
+            return new OclRelation(result);
         }
 
-        for (OclValue rightElement
-                : rightRelation.elements()) {
-                if (!result.contains(rightElement)) {
-                result.add(rightElement);
-                }
+        for (OclValue rightElement : rightRelation.elements()) {
+            if (!result.contains(rightElement)) {
+            result.add(rightElement);
+            }
         }
 
         return new OclRelation(result);
         }
 
-private OclRelation evaluateCoercion(
-        CoercionExpression expression
-        ) {
+    private OclRelation evaluateCoercion(CoercionExpression expression) {
+
         OclValue value = evaluate(expression.operand());
 
         if (!(value instanceof OclRelation relation)) {
-                throw new IllegalStateException(
-                        "Collection-Coercion erwartet eine Relation."
+            throw new IllegalStateException(
+                "Collection-Coercion erwartet eine Relation."
                 );
         }
 
         if (!expression.collectionKind().isUnique()) {
-                return relation;
+            return relation;
         }
 
         return removeDuplicates(relation);
@@ -903,52 +841,52 @@ private OclRelation removeDuplicates(
         return new OclRelation(uniqueElements);
         }
 
-private OclValue evaluateIteration(
-        IterationExpression expression
-        ) {
-        OclValue sourceValue =
-                evaluate(expression.source());
+    private OclValue evaluateIteration(IterationExpression expression) {
+
+        OclValue sourceValue = evaluate(expression.source()); // Ausdruck über dessen Ergebnis iteriert wird
 
         if (!(sourceValue instanceof OclRelation sourceRelation)) {
-                throw new IllegalStateException(
-                        "Iteration erwartet eine Relation als Source."
-                );
+                throw new IllegalStateException("Iteration erwartet eine Relation als Source.");
         }
 
-        OclValue accumulatorValue =
-                evaluate(expression.initialValue());
+        OclValue accumulatorValue = evaluate(expression.initialValue()); // Startzustand der Iteration
+
+        CType sourceType = typeChecker.determineType(expression.source()); // Statische Typ der Source wird bestimmt
+
+        CType initialType = typeChecker.determineType(expression.initialValue()); // Typ des Initialwerts des Akkumulators wird bestimmt
+
+        CType iteratorType = CType.singletonOf(sourceType.memberType()); // Typ des Akkumulators aus Typ des Initialwerts abgeleitet
+
+        CType accumulatorType = initialType.nullable(); // Erweitert den Typ, sodass leerer bzw. optionaler Zustand zulässig ist
 
         for (OclValue element : sourceRelation.elements()) {
-                Environment localEnvironment =
-                        environment.createChild();
 
-                localEnvironment.define(
-                        expression.iteratorVariable(),
-                        new OclRelation(
-                                List.of(element)
-                        )
-                );
+            // Neue lokale Laufzeitumgebung wird erstellt
+            Environment localEnvironment =environment.createChild();
+            
+            // Hier wird die Iteratorvariable im lokalen Environment definiert
+            localEnvironment.define(expression.iteratorVariable(), new OclRelation(List.of(element)));
+            
+            // Hier wird auch die Akkumulatorvariable im lokalen Environment definiert
+            localEnvironment.define(expression.accumulatorVariable(), accumulatorValue);
+            
+            // Lokale Typumgebung wird erzeugt
+            TypeEnvironment localTypeEnvironment = typeChecker.environment().createChild();
 
-                localEnvironment.define(
-                        expression.accumulatorVariable(),
-                        accumulatorValue
-                );
+            localTypeEnvironment.define(expression.iteratorVariable(), iteratorType);
 
-                Interpreter localInterpreter =
-                        new Interpreter(
-                                localEnvironment,
-                                objectStore,
-                                typeChecker
-                        );
+            localTypeEnvironment.define(expression.accumulatorVariable(), accumulatorType);
+            
+            // Lokaler TypeChecker wird erzeugt, der die lokalen Typen erkennt
+            TypeChecker localTypeChecker = new TypeChecker(localTypeEnvironment, typeChecker.modelTypeContext());
 
-                accumulatorValue =
-                        localInterpreter.evaluate(
-                                expression.body()
-                        );
+            Interpreter localInterpreter = new Interpreter(localEnvironment, objectStore, localTypeChecker);
+
+            accumulatorValue = localInterpreter.evaluate(expression.body());
         }
 
         return accumulatorValue;
-}
+    }
 
 private OclRelation evaluateConditional(
         ConditionalExpression expression

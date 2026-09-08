@@ -7,8 +7,7 @@ import java.util.Objects;
 public final class TypeEnvironment {
 
     private final TypeEnvironment parent;
-    private final Map<String, CType> types =
-            new HashMap<>();
+    private final Map<String, CType> types = new HashMap<>(); // Speichert zu jedem Variablennamen den jeweiligen Ctype
 
     public TypeEnvironment() {
         this(null);
@@ -24,16 +23,10 @@ public final class TypeEnvironment {
         return new TypeEnvironment(this);
     }
 
-    public void define(
-            String name,
-            CType type
-    ) {
+    public void define(String name, CType type) {
         validateName(name);
 
-        Objects.requireNonNull(
-                type,
-                "CType darf nicht null sein."
-        );
+        Objects.requireNonNull(type, "CType darf nicht null sein.");
 
         types.put(name, type);
     }
@@ -76,14 +69,11 @@ public final class TypeEnvironment {
     }
 
     private void validateName(String name) {
-        Objects.requireNonNull(
-                name,
-                "Variablenname darf nicht null sein."
-        );
+        Objects.requireNonNull(name, "Variablenname darf nicht null sein.");
 
         if (name.isBlank()) {
             throw new IllegalArgumentException(
-                    "Variablenname darf nicht leer sein."
+                "Variablenname darf nicht leer sein."
             );
         }
     }

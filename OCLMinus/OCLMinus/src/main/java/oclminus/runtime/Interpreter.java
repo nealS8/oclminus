@@ -294,40 +294,125 @@ public final class Interpreter {
         return new OclRelation(List.of(new OclBoolean(result)));
     }
 
-    // Vergleicht zwei Relationen entsprechend der Semantik ihres Collection-Kinds
+    // Vergleicht zwei Relationen rekursiv gemäß ihrer CTypes.
+    // Bei geordneten Collections wird die Reihenfolge berücksichtigt,
+    // bei ungeordneten Collections wird sie ignoriert.
     private boolean semanticEquals(OclRelation leftRelation, CType leftType, OclRelation rightRelation, CType rightType) {
-        
+        if (leftRelation.elements().size() != rightRelation.elements().size()) {
+            return false;
+        }
+
+        // Singleton und Option besitzen keinen CollectionKind.
+        // Da sie höchstens ein Element enthalten, wird dieses
+        // rekursiv anhand seines Member-Typs verglichen.
         if (!leftType.isCollectionKind()) {
-            return leftRelation.equals(rightRelation);
+            return orderedEquals(
+                leftRelation,
+                leftType.memberType(),
+                rightRelation,
+                rightType.memberType()
+            );
         }
 
+        // OrderedSet und Sequence:
+        // Elemente müssen an denselben Positionen semantisch gleich sein.
         if (leftType.collectionKind().isOrdered()) {
-            return leftRelation.equals(rightRelation);
+            return orderedEquals(
+                leftRelation,
+                leftType.memberType(),
+                rightRelation,
+                rightType.memberType()
+            );
         }
 
-        return unorderedEquals(leftRelation, rightRelation);
+        // Set und Bag:
+        // Reihenfolge ist irrelevant.
+        return unorderedEquals(leftRelation, leftType.memberType(), rightRelation, rightType.memberType());
     }
 
-    // Vergleicht zwei ungeordnete Relationen unabhängig von der Reihenfolge ihrer Elemente und berücksichtigt Duplikate
-    private boolean unorderedEquals(OclRelation leftRelation, OclRelation rightRelation) {
-        
+    // Vergleicht zwei ungeordnete Relationen semantisch.
+    // Die Reihenfolge wird ignoriert, Multiplizitäten bleiben erhalten.
+    private boolean unorderedEquals(OclRelation leftRelation, MemberType leftMemberType, OclRelation rightRelation, MemberType rightMemberType) {
         if (leftRelation.elements().size()
             != rightRelation.elements().size()) {
                 return false;
-                }
+            }
 
         List<OclValue> remaining = new ArrayList<>(rightRelation.elements());
 
-        for (OclValue element : leftRelation.elements()) {
+        for (OclValue leftElement : leftRelation.elements()) {
 
-            int index = remaining.indexOf(element);
+            int matchingIndex = -1;
 
-            if (index < 0) {return false;}       
+            for (int i = 0; i < remaining.size(); i++) {
 
-            remaining.remove(index);
+                OclValue rightElement = remaining.get(i);
+
+                if (elementsSemanticallyEqual(leftElement, leftMemberType, rightElement, rightMemberType)) {
+                    matchingIndex = i;
+                    break;
+                }
+            }
+
+            if (matchingIndex < 0) {
+                return false;
+            }
+
+            remaining.remove(matchingIndex);
         }
 
-        return remaining.isEmpty();
+            return remaining.isEmpty();
+    }
+
+    // Vergleicht zwei Relationen elementweise unter Berücksichtigung
+    // der Reihenfolge.
+    private boolean orderedEquals(
+        OclRelation leftRelation,
+        MemberType leftMemberType,
+        OclRelation rightRelation,
+        MemberType rightMemberType
+    ) {
+        if (leftRelation.elements().size()
+            != rightRelation.elements().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < leftRelation.elements().size(); i++) {
+
+            OclValue leftElement = leftRelation.elements().get(i);
+
+            OclValue rightElement = rightRelation.elements().get(i);
+
+            if (!elementsSemanticallyEqual(leftElement, leftMemberType, rightElement, rightMemberType)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Vergleicht zwei einzelne Elemente anhand ihres Member-Typs.
+    // Sind die Elemente selbst Relationen, wird rekursiv weiterverglichen
+    private boolean elementsSemanticallyEqual(
+        OclValue leftElement,
+        MemberType leftMemberType,
+        OclValue rightElement,
+        MemberType rightMemberType
+    ) {
+        if (leftElement instanceof OclRelation leftRelation
+            && rightElement instanceof OclRelation rightRelation
+            && leftMemberType instanceof CType leftCType
+            && rightMemberType instanceof CType rightCType) {
+
+            return semanticEquals(
+                leftRelation,
+                leftCType,
+                rightRelation,
+                rightCType
+            );
+        }
+
+        return leftElement.equals(rightElement);
     }
 
     private OclValue evaluateUnaryExpression(
@@ -854,26 +939,18 @@ public final class Interpreter {
         return new OclRelation(result);
         }
 
-    // Prüft unter Berücksichtigung des Member-CType, ob bereits ein semantisch gleiches Element enthalten ist
+    // Prüft, ob bereits ein semantisch gleiches Element
+    // in der Liste enthalten ist.
     private boolean containsSemantically(List<OclValue> values, OclValue candidate, MemberType memberType) {
-        
         for (OclValue value : values) {
 
-            if (value instanceof OclRelation valueRelation
-                && candidate instanceof OclRelation candidateRelation
-                && memberType instanceof CType memberCType) {
-
-                    if (semanticEquals(valueRelation, memberCType, candidateRelation, memberCType)) {
-                        return true;
-                    }
-
-                        } else if (value.equals(candidate)) {
-                            return true;
-                        }
+            if (elementsSemanticallyEqual(value,memberType, candidate, memberType)) {
+                return true;
+            }
         }
 
         return false;
-    }
+    }  
 
     private OclRelation evaluateCoercion(CoercionExpression expression) {
 

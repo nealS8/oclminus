@@ -104,6 +104,29 @@ public class Main {
 
         environment.define("outerSet2", new OclRelation(List.of(innerSet2)));
 
+        OclRelation nestedSet1 = new OclRelation(
+            List.of(new OclRelation(
+                List.of(
+                    new OclInteger(1),
+                    new OclInteger(2)
+                )
+            ), new OclRelation(List.of(
+                     new OclInteger(3),
+                     new OclInteger(4))
+                )
+            )
+        );
+
+        OclRelation nestedSet2 = new OclRelation(List.of(new OclRelation(
+            List.of(new OclInteger(4), new OclInteger(3))),
+            new OclRelation(List.of(new OclInteger(2), new OclInteger(1)))
+            )
+        );
+
+        environment.define("nestedSet1", nestedSet1);
+
+        environment.define("nestedSet2", nestedSet2);
+
 
         // =====================================================
         // 3. ObjectStore
@@ -143,6 +166,146 @@ public class Main {
         typeEnvironment.define("outerSet1", outerSetType);
 
         typeEnvironment.define("outerSet2", outerSetType);
+
+        CType nestedSetType = CType.setOf(CType.setOf(PrimitiveType.INTEGER));
+
+        typeEnvironment.define("nestedSet1", nestedSetType);
+
+        typeEnvironment.define("nestedSet2", nestedSetType);
+
+        // Sequence(Set(Integer)) - Beispiel - Anfang
+        OclRelation nestedSequence1 =
+        new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(1),
+                                        new OclInteger(2)
+                                )
+                        ),
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(3),
+                                        new OclInteger(4)
+                                )
+                        )
+                )
+        );
+
+OclRelation nestedSequence2 =
+        new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(4),
+                                        new OclInteger(3)
+                                )
+                        ),
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(2),
+                                        new OclInteger(1)
+                                )
+                        )
+                )
+        );
+
+environment.define(
+        "nestedSequence1",
+        nestedSequence1
+);
+
+environment.define(
+        "nestedSequence2",
+        nestedSequence2
+);
+
+CType nestedSequenceType =
+        CType.sequenceOf(
+                CType.setOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+typeEnvironment.define(
+        "nestedSequence1",
+        nestedSequenceType
+);
+
+typeEnvironment.define(
+        "nestedSequence2",
+        nestedSequenceType
+);
+
+        // Beispiel Ende
+
+        // Beispiel [[[0]], []]
+
+        OclRelation deepValue1 =
+        new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of(
+                                        new OclRelation(
+                                                List.of(
+                                                        new OclInteger(0)
+                                                )
+                                        )
+                                )
+                        ),
+                        new OclRelation(
+                                List.of()
+                        )
+                )
+        );
+
+OclRelation deepValue2 =
+        new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of()
+                        ),
+                        new OclRelation(
+                                List.of(
+                                        new OclRelation(
+                                                List.of(
+                                                        new OclInteger(0)
+                                                )
+                                        )
+                                )
+                        )
+                )
+        );
+
+        environment.define(
+        "deepValue1",
+        deepValue1
+);
+
+environment.define(
+        "deepValue2",
+        deepValue2
+);
+
+        CType deepType =
+        CType.setOf(
+                CType.setOf(
+                        CType.setOf(
+                                PrimitiveType.INTEGER
+                        )
+                )
+        );
+
+        typeEnvironment.define(
+        "deepValue1",
+        deepType
+);
+
+typeEnvironment.define(
+        "deepValue2",
+        deepType
+);
+        // [[[0]], []] Ende
 
         // =====================================================
         // 5. ModelTypeContext
@@ -218,5 +381,17 @@ public class Main {
         OclValue nestedSetMerge = engine.evaluate("outerSet1 ⊔ outerSet2");
 
         System.out.println("Verschachtelter Set-Merge = " + nestedSetMerge);
+
+        OclValue nestedEquality = engine.evaluate("nestedSet1 = nestedSet2");
+
+        System.out.println("nestedSet1 = nestedSet2: " + nestedEquality);
+
+        OclValue nestedSequenceEquality = engine.evaluate("nestedSequence1 = nestedSequence2");
+
+        System.out.println("nestedSequence1 = nestedSequence2: " + nestedSequenceEquality);
+
+        OclValue deepEquality = engine.evaluate("deepValue1 = deepValue2");
+
+        System.out.println("deepValue1 = deepValue2: " + deepEquality);
     }
 }

@@ -8,11 +8,12 @@ import oclminus.runtime.ObjectStore;
 import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
-
+import oclminus.runtime.OclInteger;
 import oclminus.type.CType;
 import oclminus.type.ClassType;
 import oclminus.type.ModelTypeContext;
 import oclminus.type.TypeEnvironment;
+import oclminus.type.PrimitiveType;
 
 public class Main {
 
@@ -84,6 +85,14 @@ public class Main {
                 )
         );
 
+        environment.define("set1", new OclRelation(
+            List.of(new OclInteger(1), new OclInteger(2))
+        ));
+
+        environment.define("set2", new OclRelation(
+            List.of(new OclInteger(2), new OclInteger(1))
+        ));
+
 
         // =====================================================
         // 3. ObjectStore
@@ -110,6 +119,10 @@ public class Main {
                         new ClassType("Person")
                 )
         );
+
+        typeEnvironment.define("set1", CType.setOf(PrimitiveType.INTEGER));
+
+        typeEnvironment.define("set2", CType.setOf(PrimitiveType.INTEGER));
 
 
         // =====================================================
@@ -156,11 +169,8 @@ public class Main {
         OclValue iteratorResult = engine.evaluate("Person1.friends ▷ [p | acc ◁ no Person as Bag | acc ⊔ p.friends]");
 
         System.out.println("Iterator-Ergebnis = " + iteratorResult);
-
-        // =====================================================
-        // 8. any mit iterate nachbilden
-        // =====================================================
-
+        
+        // Any Beispiel mit Iterator implementieren, bei dem es ein Ergebnis gibt
         OclValue anyResult = engine.evaluate(
                 "no int as Set ⊔ 1 ⊔ 4 ⊔ 5 "
                 + "▷ [x | acc ◁ no int | "
@@ -171,6 +181,7 @@ public class Main {
                 "any(x > 3) = " + anyResult
         );
 
+        // Any Beispiel mit Iterator implementieren, bei dem das Ergebnis leer ist
         OclValue anyResult2 = engine.evaluate(
             "no int as Set ⊔ 1 ⊔ 4 ⊔ 5 "
             + "▷ [x | acc ◁ no int | "
@@ -178,5 +189,10 @@ public class Main {
         );
 
         System.out.println("any(x > 10) = " + anyResult2);
+
+        // Semantische Gleichheit prüfen
+        OclValue setEquality = engine.evaluate("set1 = set2");
+
+        System.out.println("set1 = set2: " + setEquality);
     }
 }

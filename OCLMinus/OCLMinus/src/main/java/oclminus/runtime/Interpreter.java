@@ -173,10 +173,10 @@ public final class Interpreter {
                     divide(leftValue, rightValue);
 
             case EQUAL ->
-                    equal(leftValue, rightValue);
+                equal(expression, leftValue, rightValue);
 
-            case NOT_EQUAL ->
-                    notEqual(leftValue, rightValue);
+            case NOT_EQUAL -> 
+                notEqual(expression, leftValue, rightValue);
 
             case LESS_THAN ->
                     lessThan(leftValue, rightValue);
@@ -263,28 +263,74 @@ public final class Interpreter {
         );
     }
 
-    private OclValue equal(OclValue leftValue, OclValue rightValue) {
-
+    // Bestimmt die CTypes beider Operanden und prüft anschließend deren semantische Gleichheit
+    private OclValue equal(BinaryExpression expression, OclValue leftValue, OclValue rightValue) {
+        
         if (!(leftValue instanceof OclRelation leftRelation)
             || !(rightValue instanceof OclRelation rightRelation)) {
                 throw new IllegalStateException("Gleichheit erwartet Relationen.");
                 }
 
-        boolean result = leftRelation.equals(rightRelation);
+        CType leftType = typeChecker.determineType(expression.left());
+
+        CType rightType = typeChecker.determineType(expression.right());
+
+        boolean result = semanticEquals(leftRelation, leftType, rightRelation, rightType);
 
         return new OclRelation(List.of(new OclBoolean(result)));
     }
 
-    private OclValue notEqual(OclValue leftValue, OclValue rightValue) {
-
+    // Prüft die semantische Ungleichheit der beiden Operanden als Negation der semantischen Gleichheit
+    private OclValue notEqual(BinaryExpression expression, OclValue leftValue, OclValue rightValue) {
+        
         if (!(leftValue instanceof OclRelation leftRelation)
             || !(rightValue instanceof OclRelation rightRelation)) {
                 throw new IllegalStateException("Ungleichheit erwartet Relationen.");
                 }
 
-        boolean result = !leftRelation.equals(rightRelation);
+        CType leftType = typeChecker.determineType(expression.left());
+
+        CType rightType = typeChecker.determineType(expression.right());
+
+        boolean result = !semanticEquals(leftRelation, leftType, rightRelation, rightType);
 
         return new OclRelation(List.of(new OclBoolean(result)));
+    }
+
+    // Vergleicht zwei Relationen entsprechend der Semantik ihres Collection-Kinds
+    private boolean semanticEquals(OclRelation leftRelation, CType leftType, OclRelation rightRelation, CType rightType) {
+        
+        if (!leftType.isCollectionKind()) {
+            return leftRelation.equals(rightRelation);
+        }
+
+        if (leftType.collectionKind().isOrdered()) {
+            return leftRelation.equals(rightRelation);
+        }
+
+        return unorderedEquals(leftRelation, rightRelation);
+    }
+
+    // Vergleicht zwei ungeordnete Relationen unabhängig von der Reihenfolge ihrer Elemente und berücksichtigt Duplikate
+    private boolean unorderedEquals(OclRelation leftRelation, OclRelation rightRelation) {
+        
+        if (leftRelation.elements().size()
+            != rightRelation.elements().size()) {
+                return false;
+                }
+
+        List<OclValue> remaining = new ArrayList<>(rightRelation.elements());
+
+        for (OclValue element : leftRelation.elements()) {
+
+            int index = remaining.indexOf(element);
+
+            if (index < 0) {return false;}       
+
+            remaining.remove(index);
+        }
+
+        return remaining.isEmpty();
     }
 
     private OclValue evaluateUnaryExpression(

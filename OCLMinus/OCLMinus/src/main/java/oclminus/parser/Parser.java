@@ -393,23 +393,26 @@ public final class Parser {
         );
     }
 
-    private Expression finishIteration(
-        Expression source
-    ) {
+    private Expression finishIteration(Expression source) {
+        
+        // Für Iteration muss zwingend [ nach ▷ kommen
         consume(TokenType.LEFT_BRACKET, "Nach '▷' wurde '[' erwartet.");
 
+        // z.B. x 
         Token iteratorToken = consume(
             TokenType.IDENTIFIER,
             "Nach '[' wurde der Name "
             + "der Iteratorvariable erwartet."
         );
 
+        // Trennt Iteratorvariable von Akkumulator
         consume(
             TokenType.PIPE,
             "Nach der Iteratorvariable "
             + "wurde '|' erwartet."
         );
 
+        // z.B. acc
         Token accumulatorToken = consume(
                 TokenType.IDENTIFIER,
                 "Nach '|' wurde der Name "

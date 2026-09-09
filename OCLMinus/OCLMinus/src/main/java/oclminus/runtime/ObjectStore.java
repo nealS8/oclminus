@@ -4,10 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import oclminus.type.ModelTypeContext;
+
 public final class ObjectStore {
 
-    private final List<OclObject> objects =
-            new ArrayList<>();
+    private final ModelTypeContext modelTypeContext;
+
+    public ObjectStore(ModelTypeContext modelTypeContext) {
+        this.modelTypeContext =
+            Objects.requireNonNull(modelTypeContext, "ModelTypeContext darf nicht null sein.");
+    }
+
+    private final List<OclObject> objects = new ArrayList<>();
 
     public void add(OclObject object) {
         objects.add(
@@ -19,22 +27,18 @@ public final class ObjectStore {
     }
 
     public OclRelation allInstances(String className) {
-        Objects.requireNonNull(
-                className,
-                "Klassenname darf nicht null sein."
-        );
+        
+        Objects.requireNonNull(className, "Klassenname darf nicht null sein.");
 
         if (className.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Klassenname darf nicht leer sein."
-            );
+            throw new IllegalArgumentException("Klassenname darf nicht leer sein.");
         }
 
-        List<OclValue> matchingObjects =
-                new ArrayList<>();
+        List<OclValue> matchingObjects = new ArrayList<>();
 
         for (OclObject object : objects) {
-            if (object.className().equals(className)) {
+
+            if (modelTypeContext.isSameOrSubclass(object.className(), className)) {
                 matchingObjects.add(object);
             }
         }

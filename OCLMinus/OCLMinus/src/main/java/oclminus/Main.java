@@ -5,25 +5,24 @@ import java.util.Map;
 
 import oclminus.runtime.Environment;
 import oclminus.runtime.ObjectStore;
+import oclminus.runtime.OclInteger;
 import oclminus.runtime.OclObject;
 import oclminus.runtime.OclRelation;
 import oclminus.runtime.OclValue;
-import oclminus.runtime.OclInteger;
-import oclminus.type.CType;
 import oclminus.type.ClassType;
+import oclminus.type.CType;
 import oclminus.type.ModelTypeContext;
-import oclminus.type.TypeEnvironment;
 import oclminus.type.PrimitiveType;
+import oclminus.type.TypeEnvironment;
 
 public class Main {
 
     public static void main(String[] args) {
 
         // =====================================================
-        // 1. Modellobjekte erstellen
+        // 1. Modellobjekte
         // =====================================================
 
-        // Person4 hat keine Freunde.
         OclObject person4 = new OclObject(
                 "p4",
                 "Person",
@@ -33,7 +32,6 @@ public class Main {
                 )
         );
 
-        // Person3 hat keine Freunde.
         OclObject person3 = new OclObject(
                 "p3",
                 "Person",
@@ -43,110 +41,67 @@ public class Main {
                 )
         );
 
-        // Person2 ist mit Person4 befreundet.
         OclObject person2 = new OclObject(
                 "p2",
                 "Person",
                 Map.of(
                         "friends",
-                        new OclRelation(
-                                List.of(person4)
-                        )
+                        new OclRelation(List.of(person4))
                 )
         );
 
-        // Person1 ist mit Person2 und Person3 befreundet.
         OclObject person1 = new OclObject(
                 "p1",
                 "Person",
                 Map.of(
                         "friends",
                         new OclRelation(
-                                List.of(
-                                        person2,
-                                        person3
-                                )
+                                List.of(person2, person3)
+                        )
+                )
+        );
+
+        // Student1 ist eine Unterklasse von Person
+        // und hat Person2 als Freund.
+        OclObject student1 = new OclObject(
+                "s1",
+                "Student",
+                Map.of(
+                        "friends",
+                        new OclRelation(
+                                List.of(person2)
                         )
                 )
         );
 
 
         // =====================================================
-        // 2. Runtime-Environment
+        // 2. Environments und Modellkontext
         // =====================================================
 
         Environment environment = new Environment();
+        TypeEnvironment typeEnvironment = new TypeEnvironment();
+        ModelTypeContext modelTypeContext = new ModelTypeContext();
+        modelTypeContext.defineSuperClass("Student", "Person");
 
-        // Die Variable "Person1" liefert relational {Person1}.
+        modelTypeContext.defineProperty(
+                "Person",
+                "friends",
+                CType.setOf(
+                        new ClassType("Person")
+                )
+        );
+
+
+        // =====================================================
+        // 3. Person-Beispiel
+        // =====================================================
+
         environment.define(
                 "Person1",
-                new OclRelation(
-                        List.of(person1)
-                )
+                new OclRelation(List.of(person1))
         );
 
-        environment.define("sequence1", new OclRelation(
-            List.of(new OclInteger(1), new OclInteger(2))
-        ));
-
-        environment.define("sequence2", new OclRelation(
-            List.of(new OclInteger(2), new OclInteger(1))
-        ));
-
-        // Verschachteltes Norm Beispiel
-        OclRelation innerSet1 = new OclRelation(
-            List.of(new OclInteger(1), new OclInteger(2)));
-
-        OclRelation innerSet2 = new OclRelation(
-            List.of(new OclInteger(2), new OclInteger(1)));
-
-        environment.define("outerSet1", new OclRelation(List.of(innerSet1)));
-
-        environment.define("outerSet2", new OclRelation(List.of(innerSet2)));
-
-        OclRelation nestedSet1 = new OclRelation(
-            List.of(new OclRelation(
-                List.of(
-                    new OclInteger(1),
-                    new OclInteger(2)
-                )
-            ), new OclRelation(List.of(
-                     new OclInteger(3),
-                     new OclInteger(4))
-                )
-            )
-        );
-
-        OclRelation nestedSet2 = new OclRelation(List.of(new OclRelation(
-            List.of(new OclInteger(4), new OclInteger(3))),
-            new OclRelation(List.of(new OclInteger(2), new OclInteger(1)))
-            )
-        );
-
-        environment.define("nestedSet1", nestedSet1);
-
-        environment.define("nestedSet2", nestedSet2);
-
-
-        // =====================================================
-        // 3. ObjectStore
-        // =====================================================
-
-        ObjectStore objectStore = new ObjectStore();
-
-        objectStore.add(person1);
-        objectStore.add(person2);
-        objectStore.add(person3);
-        objectStore.add(person4);
-
-
-        // =====================================================
-        // 4. TypeEnvironment
-        // =====================================================
-
-        TypeEnvironment typeEnvironment = new TypeEnvironment();
-
-        // Person1 hat genau einen Wert vom Typ Person.
         typeEnvironment.define(
                 "Person1",
                 CType.singletonOf(
@@ -154,28 +109,98 @@ public class Main {
                 )
         );
 
-        typeEnvironment.define("sequence1", CType.sequenceOf(PrimitiveType.INTEGER));
+        modelTypeContext.defineProperty(
+                "Person",
+                "friends",
+                CType.setOf(
+                        new ClassType("Person")
+                )
+        );
 
-        typeEnvironment.define("sequence2", CType.sequenceOf(PrimitiveType.INTEGER));
 
-        // Verschachteltes Norm Beispiel
-        CType innerSetType = CType.setOf(PrimitiveType.INTEGER);
+        // =====================================================
+        // 4. Sequence-Beispiel
+        // =====================================================
 
-        CType outerSetType = CType.setOf(innerSetType);
+        environment.define(
+                "sequence1",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1),
+                                new OclInteger(2)
+                        )
+                )
+        );
 
-        typeEnvironment.define("outerSet1", outerSetType);
+        environment.define(
+                "sequence2",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(2),
+                                new OclInteger(1)
+                        )
+                )
+        );
 
-        typeEnvironment.define("outerSet2", outerSetType);
+        typeEnvironment.define(
+                "sequence1",
+                CType.sequenceOf(PrimitiveType.INTEGER)
+        );
 
-        CType nestedSetType = CType.setOf(CType.setOf(PrimitiveType.INTEGER));
+        typeEnvironment.define(
+                "sequence2",
+                CType.sequenceOf(PrimitiveType.INTEGER)
+        );
 
-        typeEnvironment.define("nestedSet1", nestedSetType);
 
-        typeEnvironment.define("nestedSet2", nestedSetType);
+        // =====================================================
+        // 5. Verschachteltes Set-Beispiel
+        // =====================================================
 
-        // Sequence(Set(Integer)) - Beispiel - Anfang
-        OclRelation nestedSequence1 =
-        new OclRelation(
+        OclRelation innerSet1 = new OclRelation(
+                List.of(
+                        new OclInteger(1),
+                        new OclInteger(2)
+                )
+        );
+
+        OclRelation innerSet2 = new OclRelation(
+                List.of(
+                        new OclInteger(2),
+                        new OclInteger(1)
+                )
+        );
+
+        environment.define(
+                "outerSet1",
+                new OclRelation(List.of(innerSet1))
+        );
+
+        environment.define(
+                "outerSet2",
+                new OclRelation(List.of(innerSet2))
+        );
+
+        CType outerSetType = CType.setOf(
+                CType.setOf(PrimitiveType.INTEGER)
+        );
+
+        typeEnvironment.define(
+                "outerSet1",
+                outerSetType
+        );
+
+        typeEnvironment.define(
+                "outerSet2",
+                outerSetType
+        );
+
+
+        // =====================================================
+        // 6. Set(Set(Integer))-Beispiel
+        // =====================================================
+
+        OclRelation nestedSet1 = new OclRelation(
                 List.of(
                         new OclRelation(
                                 List.of(
@@ -192,8 +217,7 @@ public class Main {
                 )
         );
 
-OclRelation nestedSequence2 =
-        new OclRelation(
+        OclRelation nestedSet2 = new OclRelation(
                 List.of(
                         new OclRelation(
                                 List.of(
@@ -210,39 +234,99 @@ OclRelation nestedSequence2 =
                 )
         );
 
-environment.define(
-        "nestedSequence1",
-        nestedSequence1
-);
+        environment.define(
+                "nestedSet1",
+                nestedSet1
+        );
 
-environment.define(
-        "nestedSequence2",
-        nestedSequence2
-);
+        environment.define(
+                "nestedSet2",
+                nestedSet2
+        );
 
-CType nestedSequenceType =
-        CType.sequenceOf(
-                CType.setOf(
-                        PrimitiveType.INTEGER
+        CType nestedSetType = CType.setOf(
+                CType.setOf(PrimitiveType.INTEGER)
+        );
+
+        typeEnvironment.define(
+                "nestedSet1",
+                nestedSetType
+        );
+
+        typeEnvironment.define(
+                "nestedSet2",
+                nestedSetType
+        );
+
+
+        // =====================================================
+        // 7. Sequence(Set(Integer))-Beispiel
+        // =====================================================
+
+        OclRelation nestedSequence1 = new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(1),
+                                        new OclInteger(2)
+                                )
+                        ),
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(3),
+                                        new OclInteger(4)
+                                )
+                        )
                 )
         );
 
-typeEnvironment.define(
-        "nestedSequence1",
-        nestedSequenceType
-);
+        OclRelation nestedSequence2 = new OclRelation(
+                List.of(
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(4),
+                                        new OclInteger(3)
+                                )
+                        ),
+                        new OclRelation(
+                                List.of(
+                                        new OclInteger(2),
+                                        new OclInteger(1)
+                                )
+                        )
+                )
+        );
 
-typeEnvironment.define(
-        "nestedSequence2",
-        nestedSequenceType
-);
+        environment.define(
+                "nestedSequence1",
+                nestedSequence1
+        );
 
-        // Beispiel Ende
+        environment.define(
+                "nestedSequence2",
+                nestedSequence2
+        );
 
-        // Beispiel [[[0]], []]
+        CType nestedSequenceType = CType.sequenceOf(
+                CType.setOf(PrimitiveType.INTEGER)
+        );
 
-        OclRelation deepValue1 =
-        new OclRelation(
+        typeEnvironment.define(
+                "nestedSequence1",
+                nestedSequenceType
+        );
+
+        typeEnvironment.define(
+                "nestedSequence2",
+                nestedSequenceType
+        );
+
+
+        // =====================================================
+        // 8. Tief verschachteltes Set-Beispiel: [[[0]], []]
+        // =====================================================
+
+        OclRelation deepValue1 = new OclRelation(
                 List.of(
                         new OclRelation(
                                 List.of(
@@ -253,18 +337,13 @@ typeEnvironment.define(
                                         )
                                 )
                         ),
-                        new OclRelation(
-                                List.of()
-                        )
+                        new OclRelation(List.of())
                 )
         );
 
-OclRelation deepValue2 =
-        new OclRelation(
+        OclRelation deepValue2 = new OclRelation(
                 List.of(
-                        new OclRelation(
-                                List.of()
-                        ),
+                        new OclRelation(List.of()),
                         new OclRelation(
                                 List.of(
                                         new OclRelation(
@@ -278,17 +357,16 @@ OclRelation deepValue2 =
         );
 
         environment.define(
-        "deepValue1",
-        deepValue1
-);
+                "deepValue1",
+                deepValue1
+        );
 
-environment.define(
-        "deepValue2",
-        deepValue2
-);
+        environment.define(
+                "deepValue2",
+                deepValue2
+        );
 
-        CType deepType =
-        CType.setOf(
+        CType deepType = CType.setOf(
                 CType.setOf(
                         CType.setOf(
                                 PrimitiveType.INTEGER
@@ -297,62 +375,84 @@ environment.define(
         );
 
         typeEnvironment.define(
-        "deepValue1",
-        deepType
-);
+                "deepValue1",
+                deepType
+        );
 
-typeEnvironment.define(
-        "deepValue2",
-        deepType
-);
-        // [[[0]], []] Ende
+        typeEnvironment.define(
+                "deepValue2",
+                deepType
+        );
 
         // =====================================================
-        // 5. ModelTypeContext
+        // Vererbungsbeispiel
         // =====================================================
 
-        ModelTypeContext modelTypeContext = new ModelTypeContext();
-
-        // Person.friends ist eine Menge von Personen.
-        modelTypeContext.defineProperty(
-                "Person",
-                "friends",
-                CType.setOf(
-                        new ClassType("Person")
+        environment.define(
+                "Student1",
+                        new OclRelation(
+                        List.of(student1)
                 )
+        );
+
+        typeEnvironment.define(
+                "Student1",
+                CType.singletonOf(
+                        new ClassType("Student")
+                )
+        );
+
+        // =====================================================
+        // 9. ObjectStore
+        // =====================================================
+
+        ObjectStore objectStore = new ObjectStore(modelTypeContext);
+
+        objectStore.add(person1);
+        objectStore.add(person2);
+        objectStore.add(person3);
+        objectStore.add(person4);
+
+        objectStore.add(student1);
+
+
+        // =====================================================
+        // 10. Engine
+        // =====================================================
+
+        OclMinusEngine engine = new OclMinusEngine(
+                environment,
+                objectStore,
+                typeEnvironment,
+                modelTypeContext
         );
 
 
         // =====================================================
-        // 6. Engine
+        // 11. Auswertungen
         // =====================================================
 
-        OclMinusEngine engine =
-                new OclMinusEngine(
-                        environment,
-                        objectStore,
-                        typeEnvironment,
-                        modelTypeContext
-                );
+        System.out.println(
+                "Person1.friends = "
+                        + engine.evaluate("Person1.friends")
+        );
+
+        System.out.println(
+                "Person1.friends.friends = "
+                        + engine.evaluate("Person1.friends.friends")
+        );
+
+        System.out.println(
+                "Iterator-Ergebnis = "
+                        + engine.evaluate(
+                                "Person1.friends "
+                                + "▷ [p | acc ◁ no Person as Bag | "
+                                + "acc ⊔ p.friends]"
+                        )
+        );
 
 
-        // =====================================================
-        // 7. Ganze Engine testen
-        // =====================================================
-
-        OclValue result1 = engine.evaluate("Person1.friends");
-
-        System.out.println("Person1.friends = " + result1);
-
-        OclValue result2 = engine.evaluate("Person1.friends.friends");
-
-        System.out.println("Person1.friends.friends = " + result2);
-
-        OclValue iteratorResult = engine.evaluate("Person1.friends ▷ [p | acc ◁ no Person as Bag | acc ⊔ p.friends]");
-
-        System.out.println("Iterator-Ergebnis = " + iteratorResult);
-        
-        // Any Beispiel mit Iterator implementieren, bei dem es ein Ergebnis gibt
+        // Any mit Treffer
         OclValue anyResult = engine.evaluate(
                 "no int as Set ⊔ 1 ⊔ 4 ⊔ 5 "
                 + "▷ [x | acc ◁ no int | "
@@ -363,35 +463,65 @@ typeEnvironment.define(
                 "any(x > 3) = " + anyResult
         );
 
-        // Any Beispiel mit Iterator implementieren, bei dem das Ergebnis leer ist
+
+        // Any ohne Treffer
         OclValue anyResult2 = engine.evaluate(
-            "no int as Set ⊔ 1 ⊔ 4 ⊔ 5 "
-            + "▷ [x | acc ◁ no int | "
-            + "acc = no int and x > 10 ? x : acc]"
+                "no int as Set ⊔ 1 ⊔ 4 ⊔ 5 "
+                + "▷ [x | acc ◁ no int | "
+                + "acc = no int and x > 10 ? x : acc]"
         );
 
-        System.out.println("any(x > 10) = " + anyResult2);
+        System.out.println(
+                "any(x > 10) = " + anyResult2
+        );
 
-        // Semantische Gleichheit prüfen
-        OclValue setEquality = engine.evaluate("sequence1 = sequence2");
 
-        System.out.println("sequence1 = sequence2: " + setEquality);
+        // Semantische Gleichheit
+        System.out.println(
+                "sequence1 = sequence2: "
+                        + engine.evaluate(
+                                "sequence1 = sequence2"
+                        )
+        );
 
-        // Verschachteltes Norm Beispiel
-        OclValue nestedSetMerge = engine.evaluate("outerSet1 ⊔ outerSet2");
+        System.out.println(
+                "Verschachtelter Set-Merge = "
+                        + engine.evaluate(
+                                "outerSet1 ⊔ outerSet2"
+                        )
+        );
 
-        System.out.println("Verschachtelter Set-Merge = " + nestedSetMerge);
+        System.out.println(
+                "nestedSet1 = nestedSet2: "
+                        + engine.evaluate(
+                                "nestedSet1 = nestedSet2"
+                        )
+        );
 
-        OclValue nestedEquality = engine.evaluate("nestedSet1 = nestedSet2");
+        System.out.println(
+                "nestedSequence1 = nestedSequence2: "
+                        + engine.evaluate(
+                                "nestedSequence1 = nestedSequence2"
+                        )
+        );
 
-        System.out.println("nestedSet1 = nestedSet2: " + nestedEquality);
+        System.out.println(
+                "deepValue1 = deepValue2: "
+                        + engine.evaluate(
+                                "deepValue1 = deepValue2"
+                        )
+        );
 
-        OclValue nestedSequenceEquality = engine.evaluate("nestedSequence1 = nestedSequence2");
+        System.out.println(
+                "Person.allInstances = "
+                        + objectStore.allInstances(
+                                "Person"
+                        )
+        );
 
-        System.out.println("nestedSequence1 = nestedSequence2: " + nestedSequenceEquality);
-
-        OclValue deepEquality = engine.evaluate("deepValue1 = deepValue2");
-
-        System.out.println("deepValue1 = deepValue2: " + deepEquality);
+        System.out.println(
+        "Student1.friends = "
+                + engine.evaluate("Student1.friends")
+        );
     }
 }

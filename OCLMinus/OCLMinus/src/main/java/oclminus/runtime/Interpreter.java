@@ -298,6 +298,7 @@ public final class Interpreter {
     // Bei geordneten Collections wird die Reihenfolge berücksichtigt,
     // bei ungeordneten Collections wird sie ignoriert.
     private boolean semanticEquals(OclRelation leftRelation, CType leftType, OclRelation rightRelation, CType rightType) {
+        
         if (leftRelation.elements().size() != rightRelation.elements().size()) {
             return false;
         }
@@ -866,9 +867,7 @@ public final class Interpreter {
         return relation.elements().get(0);
     }
 
-    private OclRelation evaluateLower(
-        LowerExpression expression
-        ) {
+    private OclRelation evaluateLower(LowerExpression expression) {
         OclValue value = evaluate(expression.operand());
 
         if (!(value instanceof OclRelation outerRelation)) {
@@ -1031,17 +1030,12 @@ private OclRelation removeDuplicates(
         return accumulatorValue;
     }
 
-private OclRelation evaluateConditional(
-        ConditionalExpression expression
-        ) {
-        OclValue conditionValue =
-                evaluate(expression.condition());
+    private OclRelation evaluateConditional(ConditionalExpression expression) {
+        
+        OclValue conditionValue = evaluate(expression.condition());
 
-        if (!(conditionValue
-                instanceof OclRelation conditionRelation)) {
-                throw new IllegalStateException(
-                        "Die Bedingung muss eine Relation sein."
-                );
+        if (!(conditionValue instanceof OclRelation conditionRelation)) {
+            throw new IllegalStateException("Die Bedingung muss eine Relation sein.");
         }
 
         if (conditionRelation.elements().isEmpty()) {
@@ -1049,14 +1043,10 @@ private OclRelation evaluateConditional(
         }
 
         if (conditionRelation.elements().size() != 1) {
-                throw new IllegalStateException(
-                        "Die Bedingung muss eine Singleton- "
-                                + "oder leere Relation sein."
-                );
+            throw new IllegalStateException("Die Bedingung muss eine Singleton- oder leere Relation sein.");
         }
 
-        OclValue element =
-                conditionRelation.elements().get(0);
+        OclValue element = conditionRelation.elements().get(0);
 
         if (!(element instanceof OclBoolean booleanValue)) {
                 throw new IllegalStateException(

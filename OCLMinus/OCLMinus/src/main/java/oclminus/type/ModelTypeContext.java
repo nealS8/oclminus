@@ -5,6 +5,18 @@ import java.util.Map;
 import java.util.Objects;
 
 public final class ModelTypeContext {
+    
+    // Wichtig fuer Vererbung
+    private final Map<String, String> superClasses = new HashMap<>();
+
+    public void defineSuperClass(String className, String superClassName) {
+        
+        validateName(className, "Klassenname");
+
+        validateName(superClassName, "Name der Oberklasse");
+
+        superClasses.put(className, superClassName);
+    }
 
     private final Map<String, CType> properties =
             new HashMap<>();
@@ -38,60 +50,52 @@ public final class ModelTypeContext {
         );
     }
 
-    public CType lookupProperty(
-            String className,
-            String propertyName
-    ) {
-        validateName(
-                className,
-                "Klassenname"
-        );
+    public CType lookupProperty(String className, String propertyName) {
+        
+        validateName(className, "Klassenname");
 
-        validateName(
-                propertyName,
-                "Property-Name"
-        );
+        validateName(propertyName, "Property-Name");
 
-        CType type = properties.get(
-                qualifiedPropertyName(
-                        className,
-                        propertyName
-                )
-        );
+        String currentClass = className;
 
-        if (type == null) {
-            throw new TypeCheckException(
-                    "Für die Property '"
-                            + className
-                            + "."
-                            + propertyName
-                            + "' ist kein CType definiert."
-            );
+        while (currentClass != null) {
+
+            CType type = properties.get(qualifiedPropertyName(currentClass, propertyName));
+
+            if (type != null) {
+                return type;
+            }
+
+            currentClass = superClasses.get(currentClass);
         }
 
-        return type;
+        throw new TypeCheckException(
+            "Für die Property '"
+                    + className
+                    + "."
+                    + propertyName
+                    + "' ist kein CType definiert."
+        );
     }
 
-    public boolean containsProperty(
-            String className,
-            String propertyName
-    ) {
-        validateName(
-                className,
-                "Klassenname"
-        );
+    public boolean containsProperty(String className, String propertyName) {
+        
+        validateName(className, "Klassenname");
 
-        validateName(
-                propertyName,
-                "Property-Name"
-        );
+        validateName(propertyName, "Property-Name");
 
-        return properties.containsKey(
-                qualifiedPropertyName(
-                        className,
-                        propertyName
-                )
-        );
+        String currentClass = className;
+
+        while (currentClass != null) {
+
+            if (properties.containsKey(qualifiedPropertyName(currentClass, propertyName))) {
+                return true;
+            }
+
+            currentClass = superClasses.get(currentClass);
+        }
+
+        return false;
     }
 
     private String qualifiedPropertyName(
@@ -115,5 +119,25 @@ public final class ModelTypeContext {
                     description + " darf nicht leer sein."
             );
         }
+    }
+
+    public boolean isSameOrSubclass(String className, String expectedClassName) {
+        
+        validateName(className, "Klassenname");
+
+        validateName(expectedClassName, "Erwarteter Klassenname");
+
+        String currentClass = className;
+
+        while (currentClass != null) {
+
+            if (currentClass.equals(expectedClassName)) {
+                return true;
+            }
+
+            currentClass = superClasses.get(currentClass);
+        }
+
+        return false;
     }
 }

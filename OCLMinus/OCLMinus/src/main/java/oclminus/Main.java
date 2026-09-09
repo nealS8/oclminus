@@ -634,5 +634,55 @@ public class Main {
         boolean nestedResult = valueTypeChecker.conformsTo(wellTypedNestedValue, nestedIntegerType);
 
         System.out.println("[[[1]], []] well-typed = " + nestedResult);
+
+        boolean environmentWellTyped = valueTypeChecker.isWellTyped(environment, typeEnvironment);
+
+        System.out.println("Environment well-typed = " + environmentWellTyped);
+
+        OclRelation emptyValue = new OclRelation(List.of());
+
+        boolean emptyAsSingleton = valueTypeChecker.conformsTo(emptyValue, CType.singletonOf(PrimitiveType.INTEGER));
+
+        System.out.println("[] as Singleton(Integer) = " + emptyAsSingleton);
+
+        boolean emptyAsOption = valueTypeChecker.conformsTo(emptyValue, CType.optionOf(PrimitiveType.INTEGER));
+
+        System.out.println("[] as Option(Integer) = " + emptyAsOption);
+
+        OclRelation duplicateValue = new OclRelation(List.of(new OclInteger(1), new OclInteger(1)));
+
+        System.out.println("[1,1] as Set(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateValue, CType.setOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,1] as Bag(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateValue, CType.bagOf(PrimitiveType.INTEGER)));
+
+        OclRelation orderedTestValue = new OclRelation(List.of(new OclInteger(1), new OclInteger(2)));
+
+        System.out.println("[1,2] as Sequence(Integer) = " + valueTypeChecker.conformsTo(
+            orderedTestValue, CType.sequenceOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,2] as Bag(Integer) = " + valueTypeChecker.conformsTo(
+            orderedTestValue, CType.bagOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,2] as OrderedSet(Integer) = " + valueTypeChecker.conformsTo(
+            orderedTestValue, CType.orderedSetOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,2] as Set(Integer) = " + valueTypeChecker.conformsTo(
+            orderedTestValue, CType.setOf(PrimitiveType.INTEGER)));
+
+        OclRelation duplicateOrderedTestValue = new OclRelation(List.of(new OclInteger(1), new OclInteger(1)));
+
+        System.out.println("[1,1] as Sequence(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateOrderedTestValue, CType.sequenceOf(PrimitiveType.INTEGER)) );
+
+        System.out.println("[1,1] as Bag(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateOrderedTestValue, CType.bagOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,1] as OrderedSet(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateOrderedTestValue, CType.orderedSetOf(PrimitiveType.INTEGER)));
+
+        System.out.println("[1,1] as Set(Integer) = " + valueTypeChecker.conformsTo(
+            duplicateOrderedTestValue, CType.setOf(PrimitiveType.INTEGER)));
     }
 }

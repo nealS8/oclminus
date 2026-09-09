@@ -3,11 +3,14 @@ package oclminus.type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public final class TypeEnvironment {
 
     private final TypeEnvironment parent;
     private final Map<String, CType> types = new HashMap<>(); // Speichert zu jedem Variablennamen den jeweiligen Ctype
+
+    public Set<String> variableNames() {return Set.copyOf(types.keySet());}
 
     public TypeEnvironment() {
         this(null);

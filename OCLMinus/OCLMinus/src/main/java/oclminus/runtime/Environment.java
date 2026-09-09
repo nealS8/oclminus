@@ -3,8 +3,11 @@ package oclminus.runtime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public final class Environment {
+
+    public Set<String> variableNames() {return Set.copyOf(values.keySet());}
 
     private final Environment parent;
     private final Map<String, OclValue> values =

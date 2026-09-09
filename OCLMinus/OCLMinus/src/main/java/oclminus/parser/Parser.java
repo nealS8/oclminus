@@ -333,6 +333,17 @@ public final class Parser {
     }
 
     private Expression parsePrimary() {
+        
+        // Geklammerter Ausdruck
+        if (match(TokenType.LEFT_PAREN)) {
+
+            Expression expression = parseExpression();
+
+            consume(TokenType.RIGHT_PAREN, "Nach dem geklammerten Ausdruck wurde ')' erwartet.");
+
+            return expression;
+        }
+        
         if (match(TokenType.INTEGER)) {
             Token token = previous();
 

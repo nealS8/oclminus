@@ -14,6 +14,7 @@ import oclminus.type.CType;
 import oclminus.type.ModelTypeContext;
 import oclminus.type.PrimitiveType;
 import oclminus.type.TypeEnvironment;
+import oclminus.type.ValueTypeChecker;
 
 public class Main {
 
@@ -403,6 +404,63 @@ public class Main {
         );
 
         // =====================================================
+        // 9. Mixed-CType-Beispiel für Merge
+        // =====================================================
+
+        // e1 = [0] als Bag(Integer) -> nicht unique
+        environment.define(
+                "e1",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(0)
+                        )
+                )
+        );
+
+        typeEnvironment.define(
+                "e1",
+                CType.bagOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+
+        // e2 = [1] als Set(Integer) -> unique
+        environment.define(
+                "e2",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1)
+                        )
+                )
+        );
+
+        typeEnvironment.define(
+                "e2",
+                CType.setOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+
+        // e3 = [1] als Set(Integer) -> unique
+        environment.define(
+                "e3",
+                new OclRelation(
+                        List.of(
+                                new OclInteger(1)
+                        )
+                )
+        );
+
+        typeEnvironment.define(
+                "e3",
+                CType.setOf(
+                        PrimitiveType.INTEGER
+                )
+        );
+
+        // =====================================================
         // 9. ObjectStore
         // =====================================================
 
@@ -523,5 +581,58 @@ public class Main {
         "Student1.friends = "
                 + engine.evaluate("Student1.friends")
         );
+
+        // =====================================================
+        // Mixed-CType: fehlende Assoziativität von Merge
+        // =====================================================
+
+        OclValue mergeLeftAssociated = engine.evaluate(
+                "(e1 ⊔ e2) ⊔ e3"
+        );
+
+        OclValue mergeRightAssociated = engine.evaluate(
+                "e1 ⊔ (e2 ⊔ e3)"
+        );
+
+        System.out.println(
+                "(e1 ⊔ e2) ⊔ e3 = "
+                        + mergeLeftAssociated
+        );
+
+        System.out.println(
+                "e1 ⊔ (e2 ⊔ e3) = "
+                        + mergeRightAssociated
+        );
+
+        // =====================================================
+        // Navigation-safe Conditional
+        // =====================================================
+
+        OclValue emptyConditionResult = engine.evaluate(
+                "no bool ? 1 : 2"
+        );
+
+        System.out.println(
+                "no bool ? 1 : 2 = "
+                        + emptyConditionResult
+        );
+
+        OclRelation illTypedValue = new OclRelation(
+            List.of(new OclInteger(1), new OclRelation(List.of())));
+        
+        ValueTypeChecker valueTypeChecker = new ValueTypeChecker(modelTypeContext);
+
+        boolean result = valueTypeChecker.conformsTo(illTypedValue, CType.setOf(PrimitiveType.INTEGER));
+
+        System.out.println("[1, []] as Set(Integer) = " + result);
+
+        OclRelation wellTypedNestedValue = new OclRelation(List.of(new OclRelation(
+            List.of(new OclRelation(List.of(new OclInteger(1))))), new OclRelation(List.of())));
+
+        CType nestedIntegerType = CType.setOf(CType.setOf(CType.setOf(PrimitiveType.INTEGER)));
+
+        boolean nestedResult = valueTypeChecker.conformsTo(wellTypedNestedValue, nestedIntegerType);
+
+        System.out.println("[[[1]], []] well-typed = " + nestedResult);
     }
 }

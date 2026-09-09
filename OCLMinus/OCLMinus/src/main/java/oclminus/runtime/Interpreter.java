@@ -31,22 +31,6 @@ public final class Interpreter {
     private final ObjectStore objectStore;
     private final TypeChecker typeChecker;
 
-    public Interpreter() {
-        this(
-            new Environment(),
-            new ObjectStore(),
-            new TypeChecker()
-        );
-    }
-
-    public Interpreter(Environment environment) {
-        this(
-            environment,
-            new ObjectStore(),
-            new TypeChecker()
-        );
-    }
-
     public Interpreter(
         Environment environment,
         ObjectStore objectStore
@@ -936,7 +920,7 @@ public final class Interpreter {
         }
 
         return new OclRelation(result);
-        }
+    }
 
     // Prüft, ob bereits ein semantisch gleiches Element
     // in der Liste enthalten ist.

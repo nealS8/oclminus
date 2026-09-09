@@ -22,66 +22,180 @@ import oclminus.type.TypeEnvironment;
  */
 public final class OclMinusEngine {
 
-    private final Environment environment; // Enthält Laufzeitwerte von Variablen
-    private final ObjectStore objectStore; // Enthält konkrete Objekte eines Modells
-    private final TypeEnvironment typeEnvironment; // Enthält Typen von Variablen; wird vom Typchecker benötigt
-    private final ModelTypeContext modelTypeContext; // Beschreibt welche Klassen und Eigenschaften existieren (statisch)
-    
-    // Übergabe von nur einem Argument (Environment); this ruft anderen Konstruktor in der Klasse auf
-    public OclMinusEngine(Environment environment) {
-        this(environment, new ObjectStore(), new TypeEnvironment(), new ModelTypeContext());
-    }
+    // Enthält Laufzeitwerte von Variablen
+    private final Environment environment;
 
-    // Zwei Argumente
-    public OclMinusEngine(Environment environment, ObjectStore objectStore) {
-        this(environment, objectStore, new TypeEnvironment(), new ModelTypeContext());
-    }
+    // Enthält konkrete Objekte eines Modells
+    private final ObjectStore objectStore;
 
-    // Drei Argumente
-    public OclMinusEngine(Environment environment, ObjectStore objectStore, TypeEnvironment typeEnvironment) {
-        this(environment, objectStore, typeEnvironment, new ModelTypeContext());
-    }
+    // Enthält Typen von Variablen und wird vom TypeChecker benötigt
+    private final TypeEnvironment typeEnvironment;
 
-    // Kein Argument
+    // Beschreibt statisch, welche Klassen, Vererbungen und Eigenschaften existieren
+    private final ModelTypeContext modelTypeContext;
+
+
+    /**
+     * Erstellt eine vollständig leere Standard-Engine.
+     *
+     * Dabei wird ein gemeinsamer ModelTypeContext erzeugt, der sowohl
+     * vom ObjectStore als auch später vom TypeChecker verwendet wird.
+     */
     public OclMinusEngine() {
-        this(new Environment(), new ObjectStore(), new TypeEnvironment(), new ModelTypeContext());
+        this(new ModelTypeContext());
     }
 
-    // Alle Konstruktoren werden hierher geleitet
-    public OclMinusEngine(Environment environment, ObjectStore objectStore, TypeEnvironment typeEnvironment,ModelTypeContext modelTypeContext) {
-        this.environment = Objects.requireNonNull(environment,
-                "Environment darf nicht null sein."
-        );
 
-        this.objectStore = Objects.requireNonNull(objectStore,
-                "ObjectStore darf nicht null sein."
-        );
-
-        this.typeEnvironment = Objects.requireNonNull(typeEnvironment,
-                "TypeEnvironment darf nicht null sein."
-        );
-
-        this.modelTypeContext = Objects.requireNonNull(modelTypeContext,
-                "ModelTypeContext darf nicht null sein."
+    /**
+     * Hilfskonstruktor für die Standard-Engine.
+     *
+     * Wichtig:
+     * ObjectStore und Engine erhalten denselben ModelTypeContext.
+     */
+    private OclMinusEngine(
+            ModelTypeContext modelTypeContext
+    ) {
+        this(
+            new Environment(),
+            new ObjectStore(modelTypeContext),
+            new TypeEnvironment(),
+            modelTypeContext
         );
     }
 
-    public OclValue evaluate(String source) {
-        Objects.requireNonNull(source,
-                "Source darf nicht null sein."
+
+    /**
+     * Erstellt eine Engine mit einem bereits vorhandenen Environment.
+     *
+     * Für ObjectStore und TypeChecker wird ein gemeinsamer neuer
+     * ModelTypeContext verwendet.
+     */
+    public OclMinusEngine(
+            Environment environment
+    ) {
+        this(
+            environment,
+            new ModelTypeContext()
+        );
+    }
+
+
+    /**
+     * Hilfskonstruktor für eine Engine mit vorhandenem Environment.
+     */
+    private OclMinusEngine(
+            Environment environment,
+            ModelTypeContext modelTypeContext
+    ) {
+        this(
+            environment,
+            new ObjectStore(modelTypeContext),
+            new TypeEnvironment(),
+            modelTypeContext
+        );
+    }
+
+
+    /**
+     * Vollständiger Konstruktor.
+     *
+     * Dieser Konstruktor wird verwendet, wenn Environment, ObjectStore,
+     * TypeEnvironment und ModelTypeContext bereits außerhalb der Engine
+     * aufgebaut wurden.
+     *
+     * Besonders wichtig ist, dass der übergebene ObjectStore denselben
+     * ModelTypeContext verwenden sollte wie der hier übergebene
+     * modelTypeContext.
+     */
+    public OclMinusEngine(
+            Environment environment,
+            ObjectStore objectStore,
+            TypeEnvironment typeEnvironment,
+            ModelTypeContext modelTypeContext
+    ) {
+        this.environment = Objects.requireNonNull(
+            environment,
+            "Environment darf nicht null sein."
         );
 
-        Lexer lexer = new Lexer(source);
-        List<Token> tokens = lexer.tokenize();
+        this.objectStore = Objects.requireNonNull(
+            objectStore,
+            "ObjectStore darf nicht null sein."
+        );
 
-        Parser parser = new Parser(tokens);
-        Expression expression = parser.parse();
+        this.typeEnvironment = Objects.requireNonNull(
+            typeEnvironment,
+            "TypeEnvironment darf nicht null sein."
+        );
 
-        TypeChecker typeChecker = new TypeChecker(typeEnvironment, modelTypeContext);
+        this.modelTypeContext = Objects.requireNonNull(
+            modelTypeContext,
+            "ModelTypeContext darf nicht null sein."
+        );
+    }
+
+
+    /**
+     * Führt einen OCL-Minus-Ausdruck vollständig aus:
+     *
+     * 1. Lexer
+     * 2. Parser
+     * 3. TypeChecker
+     * 4. Interpreter
+     */
+    public OclValue evaluate(
+            String source
+    ) {
+        Objects.requireNonNull(
+            source,
+            "Source darf nicht null sein."
+        );
+
+        // ---------------------------------------------------------
+        // 1. Lexer
+        // ---------------------------------------------------------
+
+        Lexer lexer =
+            new Lexer(source);
+
+        List<Token> tokens =
+            lexer.tokenize();
+
+
+        // ---------------------------------------------------------
+        // 2. Parser
+        // ---------------------------------------------------------
+
+        Parser parser =
+            new Parser(tokens);
+
+        Expression expression =
+            parser.parse();
+
+
+        // ---------------------------------------------------------
+        // 3. Typprüfung
+        // ---------------------------------------------------------
+
+        TypeChecker typeChecker =
+            new TypeChecker(
+                typeEnvironment,
+                modelTypeContext
+            );
 
         typeChecker.check(expression);
 
-        Interpreter interpreter = new Interpreter(environment, objectStore, typeChecker);
+
+        // ---------------------------------------------------------
+        // 4. Auswertung
+        // ---------------------------------------------------------
+
+        Interpreter interpreter =
+            new Interpreter(
+                environment,
+                objectStore,
+                typeChecker
+            );
 
         return interpreter.evaluate(expression);
     }
